@@ -1,66 +1,103 @@
-# CEVAZ Spelling Bee Adventure Lab · Level 1
+# CEVAZ Spelling Bee Practice Lab · GitHub Edition v4
 
-A gamified browser practice app for CEVAZ Kids Level 1 Spelling Bee preparation.
+Interactive Level 1 Spelling Bee practice for children.
 
-## What children can practice
+## Live student frontend
 
-1. **Sound Detective** — hear a word and build its spelling with letter tiles.
-2. **Spell It Out!** — hear a word, spell it aloud, see the letters recognized, and use **Letter Rescue** when one needs practice.
-3. **Voice Challenge** — hear and repeat the whole word.
-4. **Word Match** — connect an emoji/picture cue with the correct word.
-5. **Word Builder** — repair words with missing letters.
-6. **Bee Arena** — a short contest-style spoken spelling round with `Repeat please` practice.
+https://supervisordocentelalimpia.github.io/SpellingBeePractice/
 
-The app contains the official 60 Level 1 words used in the supplied practice prototype.
+GitHub Pages is enabled for this repository.
 
-## Letter Rescue
+## Architecture
 
-When spoken spelling does not match the target, the app aligns the expected and recognized letter sequences. For substitutions or omitted letters, it highlights the expected letter and lets the child:
-
-- tap the letter to hear its American English letter name;
-- repeat that letter into the microphone;
-- rescue the letter;
-- spell the whole word again.
-
-Feedback is intentionally non-numeric: **Excellent!**, **Great!**, and **Keep practicing!**
-
-## Technology
-
-- HTML5
-- CSS3
-- Vanilla JavaScript ES modules
-- MVC-style separation of models, views, and controllers
-- Browser Web Speech API for speech recognition and text-to-speech
-- `localStorage` for Bee Stars, honeycomb progress, badges, and selected voice
-- GitHub Pages hosting
-- No backend
-- No API keys
-- No runtime dependencies or CDNs
-
-## Browser note
-
-For the microphone activities, use a current Chromium-based browser such as Chrome or Edge where browser speech recognition is available. Speech capabilities vary by browser and device. The non-microphone missions remain usable when recognition is unavailable.
-
-The app itself does not intentionally save microphone recordings or transcript history. Browser speech recognition may be processed by the browser/vendor's speech service depending on the device and browser.
-
-## Local progress
-
-Progress is stored only in the current browser under:
-
-`cevaz.spellingBee.level1.v1`
-
-Changing devices/browsers or clearing site data resets that progress.
-
-## Tests
-
-With Node.js installed:
-
-```bash
-npm test
+```
+Student
+  -> GitHub Pages (HTML/CSS/JavaScript + microphone)
+  -> Google Apps Script Web App (backend)
+  -> Existing Google Sheet
+     - Students
+     - Sessions
+     - Activity_Log
+     - Dashboard
+     - Student_Overview
+     - Word_Analysis
+     - Data_Quality
 ```
 
-The test suite covers the 60-word bank, letter-name normalization, repeated-letter alignment, Letter Rescue decisions, local storage safety, rewards, views, and game helpers.
+## Practice missions
 
-## Publish
+1. Sound Detective
+2. Spell It Out
+3. Voice Challenge
+4. Word Match
+5. Word Builder
+6. Bee Arena
 
-See [`GITHUB_SETUP_STEP_BY_STEP.md`](./GITHUB_SETUP_STEP_BY_STEP.md) for click-by-click instructions.
+Bee Arena follows:
+
+**SAY -> SPELL -> SAY AGAIN**
+
+Its 45-second timer is only a fluency reference. Reaching zero does not close the microphone, end the round, or mark the child wrong. Overtime continues as +1s, +2s, and so on.
+
+## Microphone
+
+The frontend is served from GitHub Pages over HTTPS so the browser can request microphone permission normally.
+
+The student gate includes **Test microphone** before practice.
+
+The app checks:
+
+- secure HTTPS context;
+- microphone capture permission;
+- an available audio track;
+- Web Speech Recognition support;
+- speech-recognition errors separately from academic attempts.
+
+Technical microphone failures are logged as technical incidents and are not counted as English errors.
+
+For voice activities, use a current Chrome or Edge browser.
+
+## Student identity / duplicate protection
+
+The backend protects the audit trail through:
+
+- normalized student names;
+- stable student ID recovery;
+- `LockService`;
+- `Launch_Key` session deduplication;
+- `Event_Key` idempotency.
+
+This prevents repeated clicks or reloads from counting the same learner several times.
+
+## Google Sheets teacher controls
+
+Use:
+
+- **Student_Overview** for one-row-per-student control;
+- **Dashboard** for filtered instructional interpretation;
+- **Word_Analysis** for word-level intervention;
+- **Data_Quality** before drawing conclusions from the data.
+
+See [Teacher Data Guide](./docs/TEACHER_DATA_GUIDE.md).
+
+## Connect the existing Google Sheet
+
+The server-side code is in [apps-script/Code.gs](./apps-script/Code.gs).
+
+Follow [apps-script/README.md](./apps-script/README.md).
+
+After the Apps Script Web App is deployed, paste its public `/exec` URL into [config.js](./config.js).
+
+For a one-device test before editing config.js:
+
+```
+https://supervisordocentelalimpia.github.io/SpellingBeePractice/?api=YOUR_APPS_SCRIPT_EXEC_URL
+```
+
+The app saves that backend URL in the browser after the first visit.
+
+## Security
+
+Do **not** place any Google password, OAuth token, API key, service-account private key, or other secret in this public repository.
+
+The GitHub frontend contains only public client code. Google Sheets writes happen through Apps Script.
