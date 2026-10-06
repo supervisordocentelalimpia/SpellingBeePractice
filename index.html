@@ -1,19 +1,609 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#3667d6">
-  <meta name="description" content="CEVAZ Kids Level 1 Spelling Bee Practice Lab">
-  <title>CEVAZ · Spelling Bee Adventure Lab</title>
-  <link rel="stylesheet" href="./css/app.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CEVAZ · Spelling Bee Practice Lab · Level 1</title>
+<style>
+:root{
+  --blue:#4D8EFF;--blue-deep:#315FD4;--sky:#76C8FF;--yellow:#FFD84D;--coral:#FF766B;
+  --pink:#FF8BC2;--purple:#8A7CFF;--mint:#67DDB9;--cream:#FFFDF8;--ink:#273653;--muted:#687795;
+  --line:#D9E7F8;--white:#fff;--ok:#2E8069;--warn:#8B5B16;--danger:#A4513E;
+  --r:24px;--shadow:0 12px 28px rgba(62,118,218,.12);--lift:0 18px 38px rgba(88,105,190,.17);
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Trebuchet MS","Arial Rounded MT Bold",Arial,sans-serif;color:var(--ink);background:var(--cream)}
+button,input{font:inherit}button{touch-action:manipulation}
+body{overflow-x:hidden}
+#bg{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle at 12% 10%,rgba(255,216,77,.28),transparent 18%),radial-gradient(circle at 88% 14%,rgba(255,139,194,.15),transparent 22%),radial-gradient(circle at 18% 86%,rgba(103,221,185,.16),transparent 20%),linear-gradient(160deg,#FFFBEA 0%,#F2FAFF 48%,#F6F2FF 100%);overflow:hidden}
+.spark{position:absolute;opacity:.16;animation:float 18s linear infinite;font-size:24px}.dot{position:absolute;border-radius:50%;opacity:.25;animation:twinkle 2.6s ease-in-out infinite}
+@keyframes float{from{transform:translateY(115vh) rotate(0)}to{transform:translateY(-20vh) rotate(340deg)}}@keyframes twinkle{0%,100%{transform:scale(.7);opacity:.13}50%{transform:scale(1.4);opacity:.52}}
+.wrap{width:min(1120px,calc(100% - 28px));margin:0 auto;padding:24px 0 90px}.view{display:none}.view.show{display:block}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.lang-toggle{background:#fff;border:2px solid var(--blue);color:var(--blue-deep);padding:6px 12px;border-radius:12px;font-weight:900;cursor:pointer;display:flex;gap:6px;align-items:center;box-shadow:var(--shadow)}
+.voice-panel{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:16px;padding:10px 16px;display:inline-flex;align-items:center;gap:10px;box-shadow:var(--shadow);margin-top:12px; flex-wrap:wrap; justify-content:center}
+.voice-panel select{padding:6px 10px;border-radius:8px;border:1px solid var(--line);font-weight:bold;outline:none;cursor:pointer;background:#F8FAFF;color:var(--ink)}
+.hero{text-align:center;padding:10px 10px 8px}.badge{display:inline-flex;align-items:center;gap:8px;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.92);border:1px solid var(--line);font-size:12px;font-weight:900;box-shadow:var(--shadow)}
+.logo{margin:10px 0 4px;font-weight:900;font-size:clamp(42px,7vw,72px);line-height:.98;background:linear-gradient(112deg,var(--blue-deep),var(--blue),var(--purple),var(--pink),#F4B400);-webkit-background-clip:text;background-clip:text;color:transparent}.sub{max-width:760px;margin:10px auto;color:var(--muted);font-weight:800;line-height:1.55}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;margin-top:24px}.card{position:relative;min-height:216px;border:2px solid var(--line);border-radius:var(--r);padding:26px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#fff;box-shadow:var(--shadow);cursor:pointer;transition:.2s;overflow:hidden}.card:hover{transform:translateY(-5px);box-shadow:var(--lift)}.card:active{transform:scale(.985)}.card::before{content:"";position:absolute;left:18px;right:18px;top:0;height:6px;border-radius:0 0 10px 10px;background:var(--accent)}.card .num{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:white;font-weight:900}.card .ic{font-size:56px;filter:drop-shadow(0 7px 8px rgba(60,90,160,.1))}.card h3{margin:8px 0 6px;font-size:22px}.card p{margin:0;max-width:260px;color:var(--muted);font-size:13px;line-height:1.45;font-weight:800}.card:nth-child(1){background:linear-gradient(#fff,#EDF7FF)}.card:nth-child(2){background:linear-gradient(#fff,#FFF8D8)}.card:nth-child(3){background:linear-gradient(#fff,#EBFFF8)}.card:nth-child(4){background:linear-gradient(#fff,#FFF0F5)}.card:nth-child(5){background:linear-gradient(#fff,#F3F0FF)}.card:nth-child(6){background:linear-gradient(#fff,#FFF0EC)}
+.toolbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-left:7px solid var(--blue);border-radius:var(--r);box-shadow:var(--shadow);position:sticky;top:8px;z-index:4}.toolbar h2{flex:1;margin:0;font-size:20px}.btn{border:none;border-radius:15px;padding:11px 18px;font-weight:900;cursor:pointer;box-shadow:0 8px 18px rgba(72,114,184,.14);transition:.15s; display:inline-flex; align-items:center; justify-content:center; gap:6px}.btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:0.5; cursor:not-allowed; transform:none}
+.primary{background:linear-gradient(135deg,var(--blue-deep),var(--blue),var(--purple));color:#fff}.warm{background:linear-gradient(135deg,var(--yellow),#FFBE5B,var(--coral));color:#4d3500}.soft{background:#F1F6FF;color:var(--blue-deep);border:2px solid #D7E6FF;box-shadow:none}.mint{background:linear-gradient(135deg,#5FDDB5,#63B8FF);color:#123d53}.danger{background:#FFF1EB;color:var(--danger);border:1px solid #FFD4C4;box-shadow:none}
+.stage{margin-top:18px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}.meta{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.stat{padding:7px 11px;border-radius:999px;background:#F6F9FE;border:1px solid var(--line);font-size:12px;font-weight:900}.progress{height:11px;background:#E8EFF9;border-radius:999px;overflow:hidden;margin:0 0 18px}.progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--blue),var(--purple));transition:.3s}
+.prompt{text-align:center}.emoji{font-size:88px;display:block;margin:5px 0 6px;filter:drop-shadow(0 8px 11px rgba(70,100,170,.10))}.word{font-size:clamp(36px,7vw,64px);font-weight:900;letter-spacing:1px}.masked{letter-spacing:8px}.lead{font-weight:900;color:var(--muted);line-height:1.5;margin:8px auto 16px;max-width:720px}.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px 0}.feedback{margin-top:16px;padding:14px 17px;border-radius:16px;font-weight:900;line-height:1.45;text-align:center;min-height:52px}.feedback:empty{display:none}.ok{background:linear-gradient(135deg,#EFFFF8,#EDF6FF);border:1px solid #CAEEDF;color:#315888}.hint{background:linear-gradient(135deg,#FFF8DF,#FFF2F7);border:1px solid #FFE0A1;color:var(--warn)}.bad{background:#FFF2EE;border:1px solid #FFD1C3;color:var(--danger)}
+.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:760px;margin:18px auto}.choice{border:3px solid #DFE8F7;background:#fff;border-radius:18px;padding:17px 12px;font-weight:900;font-size:24px;cursor:pointer;transition:.15s;min-height:82px; text-transform:uppercase; color:var(--blue-deep)}.choice:hover{border-color:var(--blue);transform:translateY(-2px)}.choice.good{border-color:var(--mint);background:#ECFFF8;color:var(--ok)}.choice.wrong{border-color:#FFC4AD;background:#FFF4EE;color:var(--danger)}
+.letters{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:820px;margin:16px auto}.letter{width:52px;height:52px;border-radius:13px;border:2px solid #DCE7F6;background:#fff;font-size:22px;font-weight:900;cursor:pointer}.letter:hover{border-color:var(--purple);transform:translateY(-2px)}.slots{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:14px 0}.slot{min-width:48px;height:58px;border-radius:13px;border:3px dashed #CADDF6;background:#FBFDFF;display:grid;place-items:center;font-weight:900;font-size:24px}.slot.filled{border-style:solid;border-color:var(--blue);color:var(--blue-deep);background:#F1F7FF}
+/* Guided Spelling UI */
+.spell-slots { display: flex; gap: 8px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
+.spell-slot { width: 52px; height: 64px; border-radius: 12px; border: 3px solid #DCE7F6; display: grid; place-items: center; font-size: 32px; font-weight: 900; text-transform: uppercase; background: #F8FAFF; color: #DCE7F6; transition: 0.3s; }
+.spell-slot.active-target { border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(255,216,77, 0.2); color: var(--warn); background: #FFFDF8;}
+.spell-slot.done { border-color: var(--mint); background: #ECFFF8; color: var(--ok); }
+.builder-row{display:flex;gap:8px;justify-content:center;margin:20px 0;flex-wrap:wrap; align-items:center} .builder-char{font-size:36px;font-weight:900;text-transform:uppercase;width:48px;text-align:center} .builder-input{width:48px;height:58px;border-radius:12px;border:3px solid #DCE7F6;text-align:center;font-size:28px;font-weight:900;text-transform:uppercase;outline:none;background:#fff} .builder-input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(77,142,255,.12)} .builder-input.correct{border-color:var(--mint);background:#ECFFF8;color:var(--ok)}
+.mic-box{max-width:760px;margin:15px auto;background:#F8FBFF;border:1px solid var(--line);border-radius:18px;padding:16px}.transcript{min-height:40px;padding:8px 12px;border-radius:13px;background:transparent;font-weight:900;line-height:1.45; font-size:16px; color:var(--muted); text-transform:uppercase; text-align:center}.pulse{animation:pulse 1s infinite}@keyframes pulse{50%{transform:scale(1.06);box-shadow:0 0 0 9px rgba(255,118,107,.13)}}
+.mic-status{max-width:760px;margin:10px auto 0;padding:10px 13px;border-radius:14px;font-size:13px;font-weight:900;line-height:1.45;text-align:center;display:none}.mic-status.show{display:block}.mic-status.good{background:#ECFFF8;border:1px solid #BFEEDC;color:var(--ok)}.mic-status.hint{background:#FFF8DF;border:1px solid #FFE0A1;color:var(--warn)}.mic-status.bad{background:#FFF2EE;border:1px solid #FFD1C3;color:var(--danger)}
+.manual-fallback{max-width:760px;margin:12px auto;padding:15px;border-radius:17px;background:#F8FAFF;border:2px dashed #CADDF6;text-align:center}.manual-fallback.hidden{display:none}.fallback-input{width:min(420px,90%);padding:12px 14px;border:2px solid var(--line);border-radius:13px;text-align:center;font-size:20px;font-weight:900;letter-spacing:3px;text-transform:uppercase;outline:none}.fallback-input:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(77,142,255,.12)}
+.tech-note{font-size:12px;color:var(--muted);font-weight:800;line-height:1.45;max-width:720px;margin:8px auto}.overtime{background:#FFF3E2!important;color:#9A5E12!important;border-color:#FFD79B!important}
+/* Bee Arena Protocol UI */
+.bee-steps { display: flex; justify-content: center; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+.bee-step { padding: 8px 14px; border-radius: 12px; background: #F1F6FF; color: #8BA4CD; font-weight: 900; font-size: 14px; border: 2px solid transparent; transition: 0.3s; }
+.bee-step.active { background: #fff; color: var(--blue-deep); border-color: var(--blue); box-shadow: 0 4px 12px rgba(77,142,255,0.15); transform: translateY(-2px); }
+.bee-step.done { background: #ECFFF8; color: var(--ok); border-color: var(--mint); }
+.bank{margin-top:28px;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}.bank summary{cursor:pointer;font-weight:900;font-size:18px}.word-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:14px}.word-chip{padding:10px 8px;border-radius:12px;background:#F8FAFF;border:1px solid var(--line);font-size:12px;font-weight:900;cursor:pointer;text-align:center}.word-chip:hover{background:#EEF5FF}.word-chip span{font-size:22px;display:block;margin-bottom:3px}
+.footer{margin-top:28px;text-align:center;color:#7c8ca8;font-size:12px;font-weight:900}.reward{display:inline-flex;align-items:center;gap:9px;padding:10px 15px;border:1px solid var(--line);background:#fff;border-radius:999px;cursor:pointer;box-shadow:var(--shadow)}.pop{position:fixed;pointer-events:none;z-index:99;animation:up 1.2s ease-out forwards}@keyframes up{to{transform:translate(var(--dx),-170px) rotate(var(--rot));opacity:0}}
+.timer{font-size:34px;font-weight:900;color:var(--blue-deep)}.hidden{display:none!important}
+.student-chip{display:none;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;box-shadow:var(--shadow)}
+.student-chip.show{display:inline-flex}.student-chip button{border:0;background:#F1F6FF;color:var(--blue-deep);border-radius:999px;padding:5px 8px;font-weight:900;cursor:pointer}
+.gate-card{max-width:610px;margin:44px auto 0;background:rgba(255,255,255,.97);border:2px solid var(--line);border-radius:30px;padding:30px;box-shadow:var(--lift);text-align:center;position:relative;overflow:hidden}
+.gate-card:before{content:"";position:absolute;inset:0 0 auto;height:8px;background:linear-gradient(90deg,var(--blue),var(--purple),var(--pink),var(--yellow),var(--mint))}
+.gate-icon{font-size:70px;margin:2px 0 4px}.gate-title{font-size:clamp(30px,6vw,48px);font-weight:900;margin:0;background:linear-gradient(112deg,var(--blue-deep),var(--purple),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.gate-copy{color:var(--muted);font-weight:800;line-height:1.5;max-width:500px;margin:10px auto 20px}.name-input{width:min(100%,440px);padding:15px 18px;border:3px solid #DCE7F6;border-radius:17px;outline:none;font-size:22px;font-weight:900;text-align:center;color:var(--ink);background:#fff}.name-input:focus{border-color:var(--blue);box-shadow:0 0 0 5px rgba(77,142,255,.12)}
+.privacy-note{font-size:12px;color:var(--muted);font-weight:800;line-height:1.45;margin-top:13px}.gate-error{color:var(--danger);font-weight:900;min-height:22px;margin-top:9px}
+.progress-strip{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px 0 0}.progress-pill{padding:7px 10px;border-radius:999px;background:#F6F9FE;border:1px solid var(--line);font-size:12px;font-weight:900}
+.bee-notice{max-width:820px;margin:12px auto 16px;padding:14px 16px;border-radius:18px;background:linear-gradient(135deg,#FFF8D8,#FFF0EC);border:2px solid #FFD98B;color:#704B00;font-weight:900;line-height:1.45;text-align:left}.bee-notice strong{color:#523900}
+.heard-box{max-width:760px;margin:10px auto;padding:11px 14px;border-radius:15px;background:#F8FBFF;border:1px solid var(--line);color:var(--muted);font-weight:900;min-height:45px}.heard-box b{color:var(--blue-deep)}
+.overtime{background:#FFF2EE!important;border-color:#FFD1C3!important;color:var(--danger)!important}
+@media(max-width:820px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.word-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.wrap{width:min(100% - 18px,1120px);padding-top:10px}.grid{grid-template-columns:1fr}.card{min-height:182px}.stage{padding:17px}.toolbar{flex-wrap:wrap}.toolbar h2{order:3;flex-basis:100%}.choices{grid-template-columns:1fr}.word-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 </head>
 <body>
-  <div class="background-art" aria-hidden="true"><span>🐝</span><span>⭐</span><span>ABC</span><span>✨</span></div>
-  <div id="app" class="app-root">
-    <div class="boot-card" role="status">🐝 Loading your Bee Adventure…</div>
+<div id="bg"></div>
+<div class="wrap">
+  <div class="top-bar">
+      <div class="badge">🐝 CEVAZ · KIDS · LEVEL 1</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+        <div class="student-chip" id="studentChip">👤 <span id="studentChipName"></span><button onclick="changeStudent()" title="Change student">↻</button></div>
+        <button class="lang-toggle" onclick="toggleLang()">🌎 <span id="langText">Español (Modo Padres)</span></button>
+      </div>
   </div>
-  <noscript>This practice lab needs JavaScript enabled.</noscript>
-  <script type="module" src="./js/app.js"></script>
+
+  <section id="studentGate" class="view show">
+    <div class="gate-card">
+      <div class="gate-icon">🐝</div>
+      <h1 class="gate-title" data-i18n="gateTitle">Ready to practice?</h1>
+      <p class="gate-copy" data-i18n="gateCopy">Enter your name so your practice can be saved and your teacher can see your progress.</p>
+      <input id="studentNameInput" class="name-input" maxlength="50" autocomplete="given-name" placeholder="Your name" data-i18n-placeholder="gatePlaceholder" onkeydown="if(event.key==='Enter') startStudent()">
+      <div class="actions"><button id="startPracticeBtn" class="btn primary" onclick="startStudent()" data-i18n="gateStart">🚀 Start Practice</button><button id="gateMicTestBtn" class="btn soft" onclick="testGateMicrophone()" data-i18n="gateMicTest">🎤 Test microphone</button></div>
+      <div id="gateMicStatus" class="mic-status"></div>
+      <div id="gateError" class="gate-error"></div>
+      <div class="privacy-note" data-i18n="gatePrivacy">Use only your first name (or first name + last initial). No email or other personal information is needed.</div>
+    </div>
+  </section>
+  
+  <section id="home" class="view">
+    <div class="hero">
+      <div class="logo">Spelling Bee<br>Practice Lab</div>
+      <div class="sub" data-i18n="sub">A progressive practice space for listening, word recognition, spelling recall, pronunciation practice, and competition readiness.</div>
+      
+      <div class="voice-panel">
+          <label style="font-size:13px; font-weight:bold" data-i18n="voiceLabel">Teacher Voice:</label>
+          <select id="voiceSelect" onchange="setVoice(this.value)"></select>
+          <button class="btn primary" style="padding:6px 12px; border-radius:8px" onclick="testVoice()" data-i18n="btnTest">🔊 Test Voice</button>
+      </div>
+    </div>
+    
+    <div class="grid">
+      <div class="card" style="--accent:var(--sky)" onclick="openGame(1)"><div class="num">1</div><div class="ic">👂</div><h3 data-i18n="t1">Sound Detective</h3><p data-i18n="d1">Listen closely and build the word with letter tiles.</p></div>
+      <div class="card" style="--accent:var(--yellow)" onclick="openGame(2)"><div class="num" style="color:#523900">2</div><div class="ic">🐝</div><h3 data-i18n="t2">Spell It Out</h3><p data-i18n="d2">Hear the word. Read the letters. Spell it aloud one by one.</p></div>
+      <div class="card" style="--accent:var(--mint)" onclick="openGame(3)"><div class="num">3</div><div class="ic">🎤</div><h3 data-i18n="t3">Voice Challenge</h3><p data-i18n="d3">Listen and say the whole word clearly.</p></div>
+      <div class="card" style="--accent:var(--pink)" onclick="openGame(4)"><div class="num">4</div><div class="ic">🧠</div><h3 data-i18n="t4">Word Match</h3><p data-i18n="d4">Which word matches the picture? Build vocabulary.</p></div>
+      <div class="card" style="--accent:var(--purple)" onclick="openGame(5)"><div class="num">5</div><div class="ic">✏️</div><h3 data-i18n="t5">Word Builder</h3><p data-i18n="d5">Find and fill the missing letters to complete the word.</p></div>
+      <div class="card" style="--accent:var(--coral)" onclick="openGame(6)"><div class="num">6</div><div class="ic">🏆</div><h3 data-i18n="t6">Bee Arena</h3><p data-i18n="d6">Real spelling round protocol: Say, Spell, Say Again.</p></div>
+    </div>
+    
+    <details class="bank"><summary data-i18n="bank">📚 Level 1 Word Bank · tap any word to hear it</summary><div id="bankGrid" class="word-grid"></div></details>
+    <div class="footer"><button class="reward" onclick="reward(event)">✨ <strong>CEVAZ Digital</strong> · Learn · Play · Grow ⭐</button></div>
+  </section>
+
+  <section id="game" class="view">
+    <div class="toolbar">
+        <button class="btn soft" onclick="goHome()" data-i18n="btnHome">← Home</button>
+        <h2 id="gameTitle"></h2>
+        <button class="btn warm" id="resetBtn" onclick="resetGame()" data-i18n="btnRestart">↻ Restart</button>
+    </div>
+    <div class="stage">
+      <div class="meta"><span class="stat" id="questionStat"></span><span class="stat" id="scoreStat"></span><span class="stat" id="streakStat"></span><span class="stat hidden" id="timerStat"></span></div>
+      <div class="progress"><div id="bar"></div></div>
+      <div id="gameBody"></div>
+    </div>
+    <div class="footer"><button class="reward" onclick="reward(event)">✨ <strong>CEVAZ Digital</strong> · Spelling Bee Practice Lab ⭐</button></div>
+  </section>
+</div>
+
+<script src="./config.js"></script>
+<script>
+// --- I18N (BILINGUAL PARENT MODE) ---
+const dict = {
+    en: {
+        sub: "A progressive practice space for listening, word recognition, spelling recall, pronunciation practice, and competition readiness.",
+        gateTitle: "Ready to practice?", gateCopy: "Enter your name so your practice can be saved and your teacher can see your progress.", gatePlaceholder: "Your name", gateStart: "🚀 Start Practice", gatePrivacy: "Use the name format your teacher requests (preferably first name + last name or last initial). No email or other personal information is needed.",
+        beeNotice: "This simulates a real Spelling Bee round: SAY the word, SPELL it, then SAY it again. The timer is only a reference. You can keep participating even after time reaches zero.",
+        heard: "I heard", keepGoing: "Keep going — the timer is only a reference.",
+        micPreparing: "Preparing microphone…", micReady: "Microphone ready.", micDenied: "Microphone access was blocked. Allow it in the browser site permissions and try again.", micSandbox: "This Google Apps Script page cannot receive microphone permission. Use the external HTTPS version for voice recognition; the fallback below remains available.", micNoDevice: "No working microphone was found on this device.", micNoSpeech: "I did not hear speech. Try again when you are ready.", micUnsupported: "Speech recognition is not available in this browser. Chrome or Edge is recommended.", micHttps: "Microphone access requires a secure HTTPS page.", fallbackSpell: "⌨️ Keyboard fallback", fallbackPractice: "I practiced it aloud — continue", fallbackExplain: "Technical fallback: this keeps practice moving but is logged separately and is not treated as proof of oral pronunciation.", checkSpelling: "Check spelling",
+        voiceLabel: "Teacher Voice:", btnTest: "🔊 Test Voice",
+        t1: "Sound Detective", d1: "Listen closely and build the word with letter tiles.",
+        t2: "Spell It Out", d2: "Hear the word. Read the letters. Spell it aloud one by one.",
+        t3: "Voice Challenge", d3: "Listen and say the whole word clearly.",
+        t4: "Word Match", d4: "Which word matches the picture? Build vocabulary.",
+        t5: "Word Builder", d5: "Find and fill the missing letters to complete the word.",
+        t6: "Bee Arena", d6: "Real spelling round protocol: Say, Spell, Say Again.",
+        bank: "📚 Level 1 Word Bank · tap any word to hear it",
+        btnHome: "← Home", btnRestart: "↻ Restart",
+        btnHear: "🔊 Play Word", btnClear: "🗑️ Clear", btnMicSpell: "🎤 Start Spelling", btnMicStop: "🛑 Stop Listening",
+        btnSubmit: "✅ Done", btnHearModel: "🔊 Hear Model", btnSayWord: "🎤 Say the Word",
+        lead1: "Listen closely. Build the word by tapping the letters.",
+        lead2: "Tap the mic and spell the word letter by letter.",
+        lead3: "Listen to the model, then say the whole word clearly.",
+        lead4: "Which word matches the picture?",
+        lead5: "Find the missing letters to build the word!",
+        lead6: "Follow the real-round protocol: Say the word, spell it, then say it again. The timer is only a reference — it never closes the round.",
+        wordStat: "Word", scoreStat: "⭐ Stars:", streakStat: "🔥 Streak:",
+        phrTrans: "(Say the word)", 
+        fbCorrect: "⭐ Correct!", fbAlmost: "💡 Let's try again!", fbTime: "⏱️ Time's up!",
+        bs1: "🗣️ 1. Say", bs2: "🔤 2. Spell", bs3: "🗣️ 3. Say Again"
+    },
+    es: {
+        sub: "Espacio de práctica para comprensión auditiva, deletreo interactivo y pronunciación de la competencia Spelling Bee.",
+        gateTitle: "¿Listo para practicar?", gateCopy: "Escribe tu nombre para guardar tu práctica y que tu teacher pueda ver tu progreso.", gatePlaceholder: "Tu nombre", gateStart: "🚀 Empezar práctica", gatePrivacy: "Usa el formato de nombre que indique tu teacher (preferiblemente nombre + apellido o inicial). No necesitas correo ni otros datos personales.",
+        beeNotice: "Esta actividad simula una ronda real del Spelling Bee: DI la palabra, DELETRÉALA y vuelve a DECIRLA. El cronómetro es solo una referencia. Puedes seguir participando aunque llegue a cero.",
+        heard: "Escuché", keepGoing: "Sigue participando — el cronómetro es solo una referencia.",
+        micPreparing: "Preparando micrófono…", micReady: "Micrófono listo.", micDenied: "El navegador bloqueó el micrófono. Permite el acceso en los permisos del sitio e inténtalo de nuevo.", micSandbox: "Esta página de Google Apps Script no puede recibir permiso de micrófono. Usa la versión externa HTTPS para reconocimiento de voz; el modo alternativo seguirá disponible.", micNoDevice: "No se encontró un micrófono funcional en este dispositivo.", micNoSpeech: "No escuché voz. Inténtalo otra vez cuando estés listo.", micUnsupported: "El reconocimiento de voz no está disponible en este navegador. Se recomienda Chrome o Edge.", micHttps: "El micrófono necesita una página segura HTTPS.", fallbackSpell: "⌨️ Alternativa con teclado", fallbackPractice: "Ya practiqué en voz alta — continuar", fallbackExplain: "Alternativa técnica: permite seguir practicando, pero se registra aparte y no se toma como evidencia de pronunciación oral.", checkSpelling: "Revisar deletreo",
+        voiceLabel: "Voz de la Profesora:", btnTest: "🔊 Probar Voz",
+        t1: "Sound Detective", d1: "Escucha atentamente y construye la palabra con las fichas.",
+        t2: "Spell It Out", d2: "Activa el micrófono y deletrea cada letra de la palabra una por una.",
+        t3: "Voice Challenge", d3: "Escucha y pronuncia la palabra completa claramente.",
+        t4: "Word Match", d4: "¿Qué palabra corresponde a la imagen?",
+        t5: "Word Builder", d5: "Encuentra y escribe las letras que faltan.",
+        t6: "Bee Arena", d6: "Protocolo oficial: Pronunciar, Deletrear, Pronunciar de nuevo.",
+        bank: "📚 Banco de Palabras Nivel 1 · Toca para escuchar",
+        btnHome: "← Inicio", btnRestart: "↻ Reiniciar",
+        btnHear: "🔊 Escuchar", btnClear: "🗑️ Borrar", btnMicSpell: "🎤 Iniciar Deletreo", btnMicStop: "🛑 Escuchando...",
+        btnSubmit: "✅ Listo", btnHearModel: "🔊 Escuchar", btnSayWord: "🎤 Decir Palabra",
+        lead1: "Escucha con atención. Toca las letras para construir la palabra.",
+        lead2: "Toca el micrófono y di cada letra en inglés, una por una.",
+        lead3: "Escucha el modelo y luego pronuncia la palabra completa.",
+        lead4: "¿Qué palabra corresponde a la imagen?",
+        lead5: "¡Encuentra las letras faltantes para completar la palabra!",
+        lead6: "Sigue el protocolo real: di la palabra, deletréala y vuelve a decirla. El cronómetro es solo una referencia y nunca cierra la ronda.",
+        wordStat: "Palabra", scoreStat: "⭐ Estrellas:", streakStat: "🔥 Racha:",
+        phrTrans: "(Di la palabra)",
+        fbCorrect: "⭐ ¡Correcto!", fbAlmost: "💡 ¡Vamos a intentarlo de nuevo!", fbTime: "⏱️ ¡Tiempo agotado!",
+        bs1: "🗣️ 1. Decir", bs2: "🔤 2. Deletrear", bs3: "🗣️ 3. Repetir"
+    }
+};
+
+let lang = 'en';
+function toggleLang() {
+    lang = lang === 'en' ? 'es' : 'en';
+    document.getElementById('langText').textContent = lang === 'en' ? 'Español (Modo Padres)' : 'English UI';
+    applyLang();
+}
+function applyLang() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = dict[lang][el.getAttribute('data-i18n')] || el.textContent;
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = dict[lang][el.getAttribute('data-i18n-placeholder')] || el.placeholder;
+    });
+    updateMeta();
+    if(document.getElementById('game').classList.contains('show')) render(); 
+}
+
+const WORDS=[
+ {w:'kids',e:'🧒'},{w:'boy',e:'👦'},{w:'friend',e:'🤝'},{w:'girl',e:'👧'},{w:'goodbye',e:'👋'},{w:'hello',e:'🙋'},
+ {w:'robot',e:'🤖'},{w:'short',e:'📏'},{w:'tall',e:'🦒'},{w:'afraid',e:'😨'},{w:'bird',e:'🐦'},{w:'brave',e:'🦸'},
+ {w:'cat',e:'🐱'},{w:'coin',e:'🪙'},{w:'dog',e:'🐶'},{w:'empty',e:'🫙'},{w:'flower',e:'🌸'},{w:'full',e:'🥛'},
+ {w:'hat',e:'🎩'},{w:'magic',e:'✨'},{w:'rabbit',e:'🐰'},{w:'ball',e:'⚽'},{w:'big',e:'🐘'},{w:'board',e:'🧑‍🏫'},
+ {w:'book',e:'📘'},{w:'cake',e:'🎂'},{w:'cupcake',e:'🧁'},{w:'food',e:'🍽️'},{w:'hungry',e:'😋'},{w:'little',e:'🐭'},
+ {w:'skate',e:'⛸️'},{w:'skateboard',e:'🛹'},{w:'toy',e:'🧸'},{w:'thirsty',e:'🥤'},{w:'question',e:'❓'},{w:'child',e:'🧒'},
+ {w:'beautiful',e:'🌷'},{w:'magician',e:'🪄'},{w:'family',e:'👨‍👩‍👧‍👦'},{w:'excellent',e:'🌟'},{w:'one',e:'1️⃣'},{w:'brown',e:'🟤'},
+ {w:'yes',e:'✅'},{w:'she',e:'👩'},{w:'you',e:'👉'},{w:'red',e:'🔴'},{w:'again',e:'🔁'},{w:'they',e:'👥'},
+ {w:'bush',e:'🌳'},{w:'show',e:'🎭'},{w:'white',e:'⚪'},{w:'bench',e:'🪑'},{w:'blue',e:'🔵'},{w:'skinny',e:'🧍'},
+ {w:'black',e:'⚫'},{w:'five',e:'5️⃣'},{w:'run',e:'🏃'},{w:'jump',e:'🤸'},{w:'drink',e:'🥤'},{w:'stop',e:'🛑'}
+];
+let current=0,deck=[],i=0,score=0,streak=0,tries=0,built='',timer=null,timeLeft=30,listening=false;
+let voice=null, allUSVoices=[];
+let targetWord = "", spellingIndex = 0, currentRecognition = null;
+let beeState = 1; // Used in Mission 6: 1=Say, 2=Spell, 3=Say Again
+
+const APP_VERSION = '4.0.0';
+const ACTIVITY_SKILLS = {
+  1:'Listening → orthographic mapping',
+  2:'Oral spelling / letter-name retrieval',
+  3:'Pronunciation / spoken word production',
+  4:'Lexical-semantic recognition',
+  5:'Orthographic reconstruction',
+  6:'Integrated competition protocol'
+};
+const DEFAULT_BACKEND_URL = String(window.SPELLING_BEE_BACKEND_URL || '');
+const queryApi = new URLSearchParams(location.search).get('api') || '';
+const BACKEND_URL = (queryApi || localStorage.getItem('spellingBeeBackendUrl') || DEFAULT_BACKEND_URL).trim();
+if(queryApi) localStorage.setItem('spellingBeeBackendUrl', queryApi);
+
+let studentSession = {studentId:'', sessionId:'', launchKey:'', name:'', startedAt:0, activityStartedAt:0, activityRunId:'', overtime:false};
+let recognizedLetters = [];
+let startInFlight=false, itemSolved=false, answerBusy=false;
+let micState={active:false,generation:0,permission:'unknown',lastError:'',btnId:'',mode:''};
+
+function hasAppsScript(){ return typeof google !== 'undefined' && google.script && google.script.run; }
+function safeClientId(prefix='ID') { return prefix+'-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,9).toUpperCase(); }
+function normalizeStudentName(name){return (name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim()}
+function tinyHash(text){let h=2166136261;for(const ch of text){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(16).toUpperCase().padStart(8,'0')}
+function stableStudentId(name){return 'STU-'+tinyHash(normalizeStudentName(name)).slice(0,8)}
+function getLaunchKey(name){const key='spellingBeeLaunchKey:'+normalizeStudentName(name);let v=sessionStorage.getItem(key);if(!v){v=safeClientId('LAUNCH');sessionStorage.setItem(key,v)}return v}
+function getSessionId(name){const key='spellingBeeSessionId:'+normalizeStudentName(name);let v=sessionStorage.getItem(key);if(!v){v=safeClientId('SES');sessionStorage.setItem(key,v)}return v}
+
+function postExternal(action,payload){
+    if(!BACKEND_URL) return Promise.resolve(false);
+    const form=new URLSearchParams(); form.set('payload',JSON.stringify({...payload,action}));
+    return fetch(BACKEND_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),keepalive:true}).then(()=>true).catch(err=>{console.warn('External audit unavailable',err);return false});
+}
+function callServer(fn, payload, onSuccess, onFailure){
+    if(hasAppsScript()){
+        try{
+            let runner=google.script.run.withFailureHandler(err=>{console.warn('Audit issue:',err);if(onFailure)onFailure(err)});
+            if(onSuccess) runner=runner.withSuccessHandler(onSuccess);
+            runner[fn](payload); return;
+        }catch(e){console.warn('Apps Script audit unavailable',e);if(onFailure)onFailure(e)}
+    }
+    const action=fn==='registerStudent'?'register':'log';
+    postExternal(action,payload);
+    if(onSuccess) setTimeout(()=>onSuccess({ok:true,studentId:payload.studentId||stableStudentId(payload.name||payload.studentName),sessionId:payload.sessionId||getSessionId(payload.name||payload.studentName),progress:{}}),20);
+}
+
+function startStudent(){
+    if(startInFlight) return;
+    const input=document.getElementById('studentNameInput');
+    const name=(input.value||'').trim().replace(/\s+/g,' ');
+    const err=document.getElementById('gateError');
+    const btn=document.getElementById('startPracticeBtn');
+    if(name.length<2){err.textContent=lang==='es'?'Escribe tu nombre para comenzar.':'Please enter your name to begin.';input.focus();return}
+    if(name.length>60){err.textContent=lang==='es'?'Usa un nombre más corto.':'Please use a shorter name.';return}
+    err.textContent=''; startInFlight=true; if(btn){btn.disabled=true;btn.textContent=lang==='es'?'Guardando…':'Saving…'}
+    const savedName=localStorage.getItem('spellingBeeStudentName')||'';
+    const savedId=normalizeStudentName(savedName)===normalizeStudentName(name)?(localStorage.getItem('spellingBeeStudentId')||''):'';
+    const clientStudentId=savedId||stableStudentId(name);
+    const clientSessionId=getSessionId(name); const launchKey=getLaunchKey(name);
+    const payload={name,studentId:clientStudentId,existingStudentId:savedId,sessionId:clientSessionId,launchKey,language:lang,appVersion:APP_VERSION};
+    callServer('registerStudent',payload,res=>{
+        studentSession.studentId=res.studentId||clientStudentId;
+        studentSession.sessionId=res.sessionId||clientSessionId;
+        studentSession.launchKey=launchKey;studentSession.name=name;studentSession.startedAt=Date.now();
+        localStorage.setItem('spellingBeeStudentId',studentSession.studentId);localStorage.setItem('spellingBeeStudentName',name);
+        document.getElementById('studentChipName').textContent=name;document.getElementById('studentChip').classList.add('show');
+        document.getElementById('studentGate').classList.remove('show');document.getElementById('home').classList.add('show');
+        startInFlight=false;if(btn){btn.disabled=false;btn.textContent=dict[lang].gateStart}window.scrollTo(0,0);
+        auditEvent('SESSION_START',{notes:'Practice session opened',eventKey:`${studentSession.sessionId}|SESSION_START`});
+    },()=>{startInFlight=false;if(btn){btn.disabled=false;btn.textContent=dict[lang].gateStart};err.textContent=lang==='es'?'No pude guardar ahora, pero puedes volver a intentarlo.':'I could not save right now. Please try again.'});
+}
+function changeStudent(){
+    if(studentSession.sessionId) auditEvent('SESSION_END',{notes:'Student changed',eventKey:`${studentSession.sessionId}|SESSION_END`});
+    stopAll();const oldName=studentSession.name;studentSession={studentId:'',sessionId:'',launchKey:'',name:'',startedAt:0,activityStartedAt:0,activityRunId:'',overtime:false};
+    localStorage.removeItem('spellingBeeStudentId');localStorage.removeItem('spellingBeeStudentName');
+    if(oldName){sessionStorage.removeItem('spellingBeeLaunchKey:'+normalizeStudentName(oldName));sessionStorage.removeItem('spellingBeeSessionId:'+normalizeStudentName(oldName))}
+    document.getElementById('studentChip').classList.remove('show');document.getElementById('home').classList.remove('show');document.getElementById('game').classList.remove('show');document.getElementById('studentGate').classList.add('show');
+    document.getElementById('studentNameInput').value='';document.getElementById('studentNameInput').focus();
+}
+function currentItemKey(){return `${studentSession.sessionId}|${studentSession.activityRunId||'RUN'}|A${current||0}|Q${i+1}|${(deck[i]&&deck[i].w)||''}`}
+function auditEvent(eventName,extra={}){
+    if(!studentSession.name)return;
+    const attempt=extra.attemptNumber!==undefined?Number(extra.attemptNumber):(eventName==='ANSWER'?Math.max(1,tries+1):Math.max(0,tries));
+    const itemKey=extra.itemKey||currentItemKey();
+    const eventKey=extra.eventKey||`${itemKey}|${eventName}|${attempt}|${extra.result||''}`;
+    const payload={timestamp:new Date().toISOString(),sessionId:studentSession.sessionId,studentId:studentSession.studentId,studentName:studentSession.name,launchKey:studentSession.launchKey,
+      event:eventName,activityId:current||'',activityName:current?dict.en['t'+current]:'',word:(deck[i]&&deck[i].w)||'',result:extra.result||'',attemptNumber:attempt,
+      scoreAfter:score||0,streakAfter:streak||0,elapsedSec:studentSession.activityStartedAt?Math.round((Date.now()-studentSession.activityStartedAt)/1000):0,
+      beeOvertime:current===6&&(studentSession.overtime||timeLeft<0),language:lang,notes:extra.notes||'',skillDomain:ACTIVITY_SKILLS[current]||'',
+      firstAttempt:extra.firstAttempt!==undefined?Boolean(extra.firstAttempt):(attempt===1),techStatus:extra.techStatus||'',appVersion:APP_VERSION,eventKey,questionNo:current?i+1:0,itemKey};
+    callServer('logEvent',payload);
+}
+window.addEventListener('DOMContentLoaded',()=>{const saved=localStorage.getItem('spellingBeeStudentName');if(saved)document.getElementById('studentNameInput').value=saved;setTimeout(()=>document.getElementById('studentNameInput')?.focus(),250)});
+
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'')}
+
+function loadVoices(){
+    if(!('speechSynthesis'in window)) return;
+    let vs = speechSynthesis.getVoices() || [];
+    if(vs.length === 0) return;
+    allUSVoices = vs.filter(v => v.lang.startsWith('en-US'));
+    const select = document.getElementById('voiceSelect');
+    select.innerHTML = '';
+    const females = ['jenny', 'aria', 'ava', 'samantha', 'allison', 'zira', 'karen', 'susan'];
+    const males = ['guy', 'christopher', 'david', 'mark', 'george'];
+    
+    let scoredVoices = allUSVoices.map(v => {
+        let n = v.name.toLowerCase(), score = 0, gender = 'neutral';
+        if(n.includes('natural') || n.includes('online')) score += 50;
+        if(females.some(f => n.includes(f))) { gender = 'female'; score += 20; }
+        else if(males.some(m => n.includes(m))) { gender = 'male'; score += 10; }
+        else if(n.includes('google')) { gender = 'female'; score += 15; }
+        return { voice: v, score, gender };
+    });
+
+    let femaleVoices = scoredVoices.filter(v => v.gender !== 'male').sort((a,b) => b.score - a.score);
+    let maleVoices = scoredVoices.filter(v => v.gender === 'male').sort((a,b) => b.score - a.score).slice(0, 2);
+    let finalVoices = [...femaleVoices, ...maleVoices];
+    if(finalVoices.length === 0) finalVoices = scoredVoices; 
+
+    finalVoices.forEach((item, index) => {
+        let opt = document.createElement('option');
+        opt.value = index;
+        opt.textContent = `${item.voice.name.replace(/Microsoft |Google /g, '')} ${item.gender === 'male' ? '(M)' : '(F)'}`;
+        select.appendChild(opt);
+    });
+    if(finalVoices.length > 0){ voice = finalVoices[0].voice; allUSVoices = finalVoices.map(f => f.voice); }
+}
+if('speechSynthesis'in window){
+    speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    setTimeout(loadVoices, 120);
+}
+
+function setVoice(index){ if(allUSVoices[index]) voice = allUSVoices[index]; }
+function testVoice(){ say("Hello! Get ready for the spelling bee.", 0.85, 1.05); }
+
+function say(text,rate=0.8,pitch=1.0){
+    if(!('speechSynthesis'in window)||!text) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    if(voice) u.voice = voice;
+    u.lang = 'en-US'; u.rate = rate; u.pitch = pitch;
+    speechSynthesis.speak(u);
+}
+function speakCurrent(){say(deck[i]?.w||'',0.8,1.05)}
+function sayFeedback(type) {
+    if(type === 'correct') say(shuffle(["Excellent!", "Great job!", "Perfect!", "Correct!", "Awesome!"])[0], 0.9, 1.1);
+    else if(type === 'wrong') say(shuffle(["Let's practice.", "Try again.", "Listen closely.", "Almost!"])[0], 0.9, 1.0);
+}
+
+function initBG(){const bg=document.getElementById('bg'),icons=['⭐','✨','🐝','🔤','🎯','📘','🎈','💫'];for(let n=0;n<12;n++){const s=document.createElement('div');s.className='spark';s.textContent=icons[n%icons.length];s.style.left=Math.random()*100+'%';s.style.animationDelay=(-Math.random()*16)+'s';s.style.animationDuration=(15+Math.random()*12)+'s';bg.appendChild(s)}const cols=['#4D8EFF','#FFD84D','#FF766B','#8A7CFF','#67DDB9'];for(let n=0;n<22;n++){const d=document.createElement('div');d.className='dot';const z=4+Math.random()*7;d.style.cssText=`width:${z}px;height:${z}px;background:${cols[n%cols.length]};left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:-${Math.random()*3}s`;bg.appendChild(d)}}
+function buildBank(){const g=document.getElementById('bankGrid');WORDS.forEach((x,n)=>{const b=document.createElement('button');b.className='word-chip';b.innerHTML=`<span>${x.e}</span>${n+1}. ${x.w.toUpperCase()}`;b.onclick=()=>say(x.w, 0.8, 1.05);g.appendChild(b)})}
+
+function openGame(n){current=n;studentSession.activityStartedAt=Date.now();studentSession.overtime=false;document.getElementById('home').classList.remove('show');document.getElementById('game').classList.add('show');document.getElementById('gameTitle').textContent=dict[lang][`t${n}`];resetGame();auditEvent('ACTIVITY_START',{eventKey:`${studentSession.sessionId}|${studentSession.activityRunId}|ACTIVITY_START`});window.scrollTo(0,0)}
+function goHome(){auditEvent('ACTIVITY_EXIT',{notes:'Returned home'});stopAll();document.getElementById('game').classList.remove('show');document.getElementById('home').classList.add('show');window.scrollTo(0,0)}
+function stopAll(){if(timer){clearInterval(timer);timer=null}stopMicUI(micState.btnId||'micBtn',true);if('speechSynthesis'in window)speechSynthesis.cancel();listening=false;}
+
+function resetGame(){stopAll();deck=shuffle(WORDS).slice(0,current===6?15:10);i=0;score=0;streak=0;tries=0;built='';recognizedLetters=[];itemSolved=false;answerBusy=false;studentSession.activityRunId=safeClientId('RUN');studentSession.activityStartedAt=Date.now();studentSession.overtime=false;updateMeta();render()}
+function updateMeta(){
+    document.getElementById('questionStat').textContent=`${dict[lang].wordStat} ${Math.min(i+1,deck.length)} / ${deck.length}`;
+    document.getElementById('scoreStat').textContent=`${dict[lang].scoreStat} ${score}`;
+    document.getElementById('streakStat').textContent=`${dict[lang].streakStat} ${streak}`;
+    document.getElementById('bar').style.width=(deck.length?i/deck.length*100:0)+'%';
+    document.getElementById('timerStat').classList.toggle('hidden',current!==6)
+}
+
+function next(){i++;tries=0;built='';itemSolved=false;answerBusy=false;if(i>=deck.length){finish();return}updateMeta();render()}
+function finish(){auditEvent('ACTIVITY_COMPLETE',{notes:`${score}/${deck.length}`});stopAll();document.getElementById('bar').style.width='100%';
+    document.getElementById('questionStat').textContent=`Completed · ${deck.length} items`;
+    const pct=Math.round(score/deck.length*100);
+    sayFeedback('correct');
+    document.getElementById('gameBody').innerHTML=`<div class="prompt"><span class="emoji">🏆</span><div class="word">${pct}%</div><p class="lead">Great job! You got <strong>${score} out of ${deck.length}</strong> correct.</p><div class="feedback ok">${pct>=90?'⭐⭐⭐ You are a Spelling Bee Star!':pct>=75?'⭐⭐ Amazing work! Keep it up.':'⭐ Good effort! Let\'s practice a little more.'}</div><div class="actions"><button class="btn primary" onclick="resetGame()">${dict[lang].btnRestart}</button><button class="btn soft" onclick="goHome()">${dict[lang].btnHome}</button></div></div>`;rewardCenter()}
+
+function render(){updateMeta();const q=deck[i];if(!q)return;({1:render1,2:render2,3:render3,4:render4,5:render5,6:render6}[current])(q)}
+function fb(msg,kind='hint'){const el=document.getElementById('fb');if(el){el.className='feedback '+kind;el.innerHTML=msg;}}
+function beginAnswer(lockSolved=false){if(answerBusy||itemSolved)return false;answerBusy=true;if(lockSolved)itemSolved=true;setTimeout(()=>{answerBusy=false},450);return true}
+function correct(msg,opts={}){if(!beginAnswer(true))return;const attempt=opts.attemptNumber||Math.max(1,tries+1);sayFeedback('correct');score++;streak++;updateMeta();auditEvent('ANSWER',{result:'CORRECT',attemptNumber:attempt,firstAttempt:attempt===1,techStatus:opts.techStatus||''});fb(msg,'ok');rewardCenter();setTimeout(next,1500)}
+function wrong(msg,type='hint',opts={}){if(!beginAnswer(false))return;const attempt=Math.max(1,tries+1);tries++;streak=0;updateMeta();auditEvent('ANSWER',{result:'INCORRECT',attemptNumber:attempt,firstAttempt:attempt===1,techStatus:opts.techStatus||''});fb(msg,type)}
+function practiceOnlyComplete(msg,notes='Technical fallback practice'){if(itemSolved)return;itemSolved=true;auditEvent('PRACTICE_ONLY',{result:'COMPLETED',techStatus:'MANUAL_FALLBACK',notes});fb(msg,'ok');rewardCenter();setTimeout(next,1200)}
+
+// --- SMART PHONETIC ENGINE FOR KIDS ---
+const phoneticMap = {
+    'a':['a','eight','ay','hey','ei','eh','ah'],
+    'b':['b','bee','be','vi','vee'],
+    'c':['c','see','sea','si','zi','ci'],
+    'd':['d','dee','di','the','de'],
+    'e':['e','ee','he','i','ih','ea'],
+    'f':['f','eff','ef'],
+    'g':['g','gee','ji','jee','gie','hi'],
+    'h':['h','aitch','hach','eight','ache'],
+    'i':['i','eye','ai','ay'],
+    'j':['j','jay','yei','jei'],
+    'k':['k','kay','quey','ok','kei'],
+    'l':['l','el','elle'],
+    'm':['m','em','am'],
+    'n':['n','en','in','and'],
+    'o':['o','oh','ou','ow'],
+    'p':['p','pee','pi'],
+    'q':['q','cue','queue','kiu','kyu'],
+    'r':['r','are','ar','er'],
+    's':['s','ess','es','is','as'],
+    't':['t','tee','tea','ti'],
+    'u':['u','you','yu'],
+    'v':['v','vee','vi','be'],
+    'w':['w','doubleyou','double'],
+    'x':['x','ex','equis'],
+    'y':['y','why','wai','wa'],
+    'z':['z','zee','zed','zi','si']
+};
+
+
+async function testGateMicrophone(){
+    const el=document.getElementById('gateMicStatus');
+    const btn=document.getElementById('gateMicTestBtn');
+    const set=(msg,kind='hint')=>{if(el){el.textContent=msg;el.className='mic-status show '+kind}};
+    if(btn){btn.disabled=true;btn.textContent=lang==='es'?'🎤 Probando…':'🎤 Testing…'}
+    try{
+        if(!window.isSecureContext){set(dict[lang].gateMicHttps,'bad');return false}
+        const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+        if(!SR){set(dict[lang].gateMicUnsupported,'bad');return false}
+        if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){set(dict[lang].gateMicUnsupported,'bad');return false}
+        const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+        const audioTracks=stream.getAudioTracks();
+        stream.getTracks().forEach(t=>t.stop());
+        if(!audioTracks.length){set(dict[lang].gateMicUnsupported,'bad');return false}
+        set(dict[lang].gateMicReady,'good');return true;
+    }catch(err){
+        const n=String(err&&err.name||'');
+        if(n==='NotAllowedError'||n==='SecurityError')set(dict[lang].gateMicDenied,'bad');
+        else set(dict[lang].gateMicUnsupported,'bad');
+        return false;
+    }finally{
+        if(btn){btn.disabled=false;btn.textContent=dict[lang].gateMicTest}
+    }
+}
+
+function micMessage(code){
+    const d=dict[lang];return ({PREPARING:d.micPreparing,READY:d.micReady,DENIED:d.micDenied,APPS_SCRIPT_SANDBOX:d.micSandbox,NO_DEVICE:d.micNoDevice,NO_SPEECH:d.micNoSpeech,UNSUPPORTED:d.micUnsupported,INSECURE:d.micHttps,AUDIO_CAPTURE:d.micNoDevice})[code]||d.micDenied;
+}
+function setMicStatus(code,kind='hint'){
+    const el=document.getElementById('micStatus');if(!el)return;el.textContent=micMessage(code);el.className=`mic-status show ${kind}`;
+}
+function revealFallback(){const el=document.getElementById('manualFallback');if(el)el.classList.remove('hidden')}
+function micFailure(code,err){micState.permission='blocked';micState.lastError=code;setMicStatus(code,'bad');revealFallback();auditEvent('TECH_MIC_ERROR',{result:code,techStatus:code,notes:(err&&err.message)||code,eventKey:`${currentItemKey()}|TECH_MIC_ERROR|${code}`})}
+async function ensureMicrophone(){
+    setMicStatus('PREPARING','hint');
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){micFailure('UNSUPPORTED');return false}
+    if(!window.isSecureContext){micFailure('INSECURE');return false}
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){micFailure(hasAppsScript()?'APPS_SCRIPT_SANDBOX':'UNSUPPORTED');return false}
+    try{
+        const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+        stream.getTracks().forEach(t=>t.stop());micState.permission='granted';setMicStatus('READY','good');return true;
+    }catch(err){
+        const n=err&&err.name||'';let code='DENIED';
+        if(hasAppsScript()&&(n==='NotAllowedError'||n==='SecurityError'))code='APPS_SCRIPT_SANDBOX';
+        else if(n==='NotFoundError'||n==='DevicesNotFoundError')code='NO_DEVICE';
+        else if(n==='NotReadableError'||n==='TrackStartError')code='AUDIO_CAPTURE';
+        micFailure(code,err);return false;
+    }
+}
+function tokensFromTranscript(transcript){let t=(transcript||'').toLowerCase().replace(/double\s+you/g,'w').replace(/[^a-z\s]/g,' ').replace(/\s+/g,' ').trim();return t?t.split(' ').filter(Boolean):[]}
+function sequenceScore(transcript){const tokens=tokensFromTranscript(transcript);let idx=spellingIndex,score=0;for(const token of tokens){if(idx>=targetWord.length)break;const expected=targetWord[idx].toLowerCase(),valid=phoneticMap[expected]||[expected];if(token==='double'&&idx+1<targetWord.length&&targetWord[idx]===targetWord[idx+1]){score+=2;idx+=2;continue}if(valid.includes(token)||(token.length===1&&token===expected)){score++;idx++;continue}if(token.length>1&&targetWord.slice(idx,idx+token.length)===token){score+=token.length*.8;idx+=token.length}}return score}
+function processGuidedSpelling(alternatives,isBeeArena=false){
+    if(spellingIndex>=targetWord.length)return;if(!Array.isArray(alternatives))alternatives=[alternatives];alternatives=alternatives.filter(Boolean).sort((a,b)=>sequenceScore(b)-sequenceScore(a));
+    const transcript=alternatives[0]||'';const before=spellingIndex;const raw=tokensFromTranscript(transcript);const heard=document.getElementById('trans');if(heard)heard.innerHTML=`${dict[lang].heard}: <b>${transcript}</b>`;
+    for(const token of raw){if(spellingIndex>=targetWord.length)break;const expected=targetWord[spellingIndex].toLowerCase(),valid=phoneticMap[expected]||[expected];if(token==='double'&&spellingIndex+1<targetWord.length&&targetWord[spellingIndex]===targetWord[spellingIndex+1]){for(let n=0;n<2;n++)fillSpellingSlot(targetWord[spellingIndex])}else if(valid.includes(token)||(token.length===1&&token===expected)){fillSpellingSlot(expected)}else if(token.length>1&&targetWord.slice(spellingIndex,spellingIndex+token.length)===token){for(const ch of token)fillSpellingSlot(ch)}}
+    const visible=document.getElementById('spellingHeard');if(visible)visible.innerHTML=recognizedLetters.length?`${dict[lang].heard}: <b>${recognizedLetters.join(' · ')}</b>`:'';
+    if(spellingIndex===before&&transcript){auditEvent('VOICE_ATTEMPT',{result:'NOT_RECOGNIZED',techStatus:'SPEECH_RECOGNITION',notes:`Transcript: ${transcript}`,eventKey:`${currentItemKey()}|VOICE_ATTEMPT|${Date.now()}`});fb(lang==='es'?`Escuché “${transcript}”. Sigue intentando letra por letra.`:`I heard “${transcript}”. Keep spelling one letter at a time.`,'hint')}
+    if(spellingIndex>=targetWord.length){stopMicUI('micBtn');if(isBeeArena){beeState=3;updateBeeArenaUI()}else setTimeout(()=>correct(`🏆 ${dict[lang].fbCorrect} <strong>${targetWord.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'}),250)}
+}
+function fillSpellingSlot(ch){if(spellingIndex>=targetWord.length)return;const slot=document.getElementById('spSlot'+spellingIndex);if(slot){slot.textContent=String(ch).toUpperCase();slot.classList.add('done');slot.classList.remove('active-target')}recognizedLetters.push(String(ch).toUpperCase());spellingIndex++;if(spellingIndex<targetWord.length){const nextSlot=document.getElementById('spSlot'+spellingIndex);if(nextSlot)nextSlot.classList.add('active-target')}}
+function stopMicUI(btnId,silent=false){micState.active=false;micState.generation++;listening=false;if(currentRecognition){try{currentRecognition.abort()}catch(e){}currentRecognition=null}const btn=document.getElementById(btnId);if(btn){btn.classList.remove('pulse');btn.innerHTML=(current===3||(current===6&&(beeState===1||beeState===3)))?dict[lang].btnSayWord:dict[lang].btnMicSpell}if(!silent&&micState.permission==='granted')setMicStatus('READY','good')}
+async function toggleSpellingMic(btnId,isBeeArena=false){
+    if(micState.active){stopMicUI(btnId);return}if(!(await ensureMicrophone()))return;
+    micState.active=true;micState.btnId=btnId;micState.mode='spell';micState.generation++;const gen=micState.generation;const btn=document.getElementById(btnId);if(btn){btn.classList.add('pulse');btn.innerHTML=dict[lang].btnMicStop}runSpellingRecognition(gen,isBeeArena);
+}
+function runSpellingRecognition(gen,isBeeArena){if(!micState.active||gen!==micState.generation||spellingIndex>=targetWord.length)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const r=new SR();currentRecognition=r;r.lang='en-US';r.continuous=false;r.interimResults=false;r.maxAlternatives=5;
+    r.onstart=()=>{listening=true};r.onresult=e=>{const result=e.results[0],alts=[];for(let a=0;a<result.length;a++)alts.push(result[a].transcript.trim());processGuidedSpelling(alts,isBeeArena)};
+    r.onerror=e=>{if(e.error==='no-speech'){setMicStatus('NO_SPEECH','hint');return}if(e.error==='aborted')return;micFailure(e.error==='audio-capture'?'AUDIO_CAPTURE':(hasAppsScript()&&e.error==='not-allowed'?'APPS_SCRIPT_SANDBOX':'DENIED'),new Error(e.error));micState.active=false};
+    r.onend=()=>{currentRecognition=null;listening=false;if(micState.active&&gen===micState.generation&&spellingIndex<targetWord.length)setTimeout(()=>runSpellingRecognition(gen,isBeeArena),180);else if(!micState.active)stopMicUI(micState.btnId||'micBtn',true)};try{r.start()}catch(err){micFailure('DENIED',err);stopMicUI(micState.btnId||'micBtn',true)}
+}
+async function startWordRecognition(isBeeArena=false){
+    if(micState.active){stopMicUI(isBeeArena?'micBtn':'mic3');return}if(!(await ensureMicrophone()))return;
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const r=new SR();currentRecognition=r;const btnId=isBeeArena?'micBtn':'mic3';micState.active=true;micState.btnId=btnId;micState.mode='word';micState.generation++;const gen=micState.generation;r.lang='en-US';r.continuous=false;r.interimResults=false;r.maxAlternatives=5;
+    r.onstart=()=>{listening=true;const b=document.getElementById(btnId);if(b){b.classList.add('pulse');b.innerHTML=dict[lang].btnMicStop}};
+    r.onerror=e=>{if(e.error==='no-speech'){setMicStatus('NO_SPEECH','hint');auditEvent('VOICE_ATTEMPT',{result:'NO_SPEECH',techStatus:'NO_SPEECH',notes:'No speech detected',eventKey:`${currentItemKey()}|NO_SPEECH|${Date.now()}`})}else if(e.error!=='aborted'){micFailure(e.error==='audio-capture'?'AUDIO_CAPTURE':(hasAppsScript()&&e.error==='not-allowed'?'APPS_SCRIPT_SANDBOX':'DENIED'),new Error(e.error))}};
+    r.onresult=e=>{const result=e.results[0],alts=[];for(let a=0;a<result.length;a++)alts.push(norm(result[a].transcript));const shown=result[0].transcript;const trans=document.getElementById('trans');if(trans)trans.textContent=shown;const matched=alts.includes(norm(deck[i].w));if(matched){auditEvent('VOICE_ATTEMPT',{result:'RECOGNIZED',techStatus:'MIC_VERIFIED',notes:`Transcript: ${shown}`,eventKey:`${currentItemKey()}|VOICE_RECOGNIZED|${beeState}|${Date.now()}`});if(isBeeArena){beeState++;if(beeState>3)correct(`🏆 ${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'});else updateBeeArenaUI()}else correct(`${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'})}else{auditEvent('VOICE_ATTEMPT',{result:'NOT_RECOGNIZED',techStatus:'SPEECH_RECOGNITION',notes:`Transcript: ${shown}`,eventKey:`${currentItemKey()}|VOICE_NOT_RECOGNIZED|${Date.now()}`});fb(lang==='es'?`Escuché “${shown}”. Inténtalo otra vez con calma.`:`I heard “${shown}”. Try again slowly.`,'hint')}};
+    r.onend=()=>{if(gen!==micState.generation)return;micState.active=false;listening=false;currentRecognition=null;const b=document.getElementById(btnId);if(b){b.classList.remove('pulse');b.innerHTML=dict[lang].btnSayWord}};try{r.start()}catch(err){micFailure('DENIED',err);stopMicUI(btnId,true)}
+}
+function submitManualSpelling(isBeeArena=false){const input=document.getElementById('manualSpellInput');if(!input)return;const typed=norm(input.value);if(typed===norm(targetWord)){auditEvent('MANUAL_FALLBACK',{result:'CORRECT',techStatus:'MANUAL_FALLBACK',notes:'Keyboard fallback used',eventKey:`${currentItemKey()}|MANUAL_FALLBACK|CORRECT`});if(isBeeArena){beeState=3;updateBeeArenaUI();showBeeManualSayFallback()}else practiceOnlyComplete(`⭐ ${dict[lang].fbCorrect} <strong>${targetWord.toUpperCase()}</strong>`,'Correct keyboard fallback; oral skill not scored')}else{auditEvent('MANUAL_FALLBACK',{result:'TRY_AGAIN',techStatus:'MANUAL_FALLBACK',notes:`Typed: ${input.value}`,eventKey:`${currentItemKey()}|MANUAL_FALLBACK|TRY|${Date.now()}`});fb(dict[lang].fbAlmost,'hint');input.focus()}}
+function practiceVoiceFallback(isBeeArena=false){auditEvent('MANUAL_FALLBACK',{result:'PRACTICED_ALOUD',techStatus:'MANUAL_FALLBACK',notes:'Student self-reported oral practice; not scored',eventKey:`${currentItemKey()}|PRACTICED_ALOUD|${beeState}|${Date.now()}`});if(isBeeArena){beeState++;if(beeState===2)updateBeeArenaUI();else if(beeState>3){practiceOnlyComplete(lang==='es'?'🐝 Ronda practicada.':'🐝 Round practiced.','Bee Arena completed with technical fallback')}else updateBeeArenaUI()}else practiceOnlyComplete(lang==='es'?'🎤 Práctica oral registrada.':'🎤 Oral practice recorded.','Voice Challenge technical fallback')}
+function showBeeManualSayFallback(){const f=document.getElementById('manualFallback');if(f){f.classList.remove('hidden');f.innerHTML=`<div class="tech-note">${dict[lang].fallbackExplain}</div><button class="btn soft" onclick="practiceVoiceFallback(true)">${dict[lang].fallbackPractice}</button>`}}
+
+// --- MISSION RENDERS ---
+
+function render1(q){const letters=shuffle([...q.w.toUpperCase().split(''),...shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(c=>!q.w.toUpperCase().includes(c))).slice(0,Math.min(6,Math.max(3,q.w.length))) ]);
+    document.getElementById('gameBody').innerHTML=`<div class="prompt"><span class="emoji">${q.e}</span><p class="lead">${dict[lang].lead1}</p>
+    <div class="actions"><button class="btn primary" onclick="speakCurrent()">${dict[lang].btnHear}</button><button class="btn soft" onclick="built='';render1(deck[i])">${dict[lang].btnClear}</button></div>
+    <div id="slots" class="slots">${q.w.split('').map((_,j)=>`<div class="slot" id="s${j}"></div>`).join('')}</div>
+    <div class="letters">${letters.map((c,j)=>`<button class="letter" id="l${j}" onclick="tapLetter('${c}',${j})">${c}</button>`).join('')}</div>
+    <div id="fb" class="feedback"></div></div>`;setTimeout(speakCurrent,350)}
+function tapLetter(c,j){if(current!==1)return;if(built.length>=deck[i].w.length)return;built+=c.toLowerCase();const s=document.getElementById('s'+(built.length-1));s.textContent=c;s.classList.add('filled');document.getElementById('l'+j).disabled=true;if(built.length===deck[i].w.length){if(built===deck[i].w)correct(`${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`);else{wrong(dict[lang].fbAlmost, 'hint');setTimeout(()=>{built='';render1(deck[i])},1500)}}}
+
+function render2(q){
+    targetWord=q.w;spellingIndex=0;recognizedLetters=[];const slotsHtml=targetWord.split('').map((c,idx)=>`<div class="spell-slot ${idx===0?'active-target':''}" id="spSlot${idx}"></div>`).join('');
+    document.getElementById('gameBody').innerHTML=`<div class="prompt"><span class="emoji">${q.e}</span><p class="lead">${dict[lang].lead2}</p>
+      <div class="actions"><button class="btn primary" onclick="speakCurrent()">${dict[lang].btnHear}</button><button id="micBtn" class="btn warm" onclick="toggleSpellingMic('micBtn')">${dict[lang].btnMicSpell}</button></div>
+      <div id="micStatus" class="mic-status"></div><div class="spell-slots">${slotsHtml}</div><div class="heard-box" id="spellingHeard"></div><div class="transcript" id="trans"></div>
+      <div id="manualFallback" class="manual-fallback hidden"><div class="tech-note">${dict[lang].fallbackExplain}</div><input id="manualSpellInput" class="fallback-input" autocomplete="off" placeholder="A B C…"><div class="actions"><button class="btn soft" onclick="submitManualSpelling(false)">${dict[lang].checkSpelling}</button></div></div><div id="fb" class="feedback"></div></div>`;setTimeout(speakCurrent,350)
+}
+
+function render3(q){document.getElementById('gameBody').innerHTML=`<div class="prompt"><span class="emoji">${q.e}</span><div class="word">${q.w.toUpperCase()}</div><p class="lead">${dict[lang].lead3}</p>
+<div class="actions"><button class="btn primary" onclick="speakCurrent()">${dict[lang].btnHearModel}</button><button id="mic3" class="btn warm" onclick="startWordRecognition()">${dict[lang].btnSayWord}</button></div>
+<div id="micStatus" class="mic-status"></div><div class="mic-box"><div id="trans" class="transcript" style="text-transform:none;letter-spacing:normal;">${dict[lang].phrTrans}</div></div>
+<div id="manualFallback" class="manual-fallback hidden"><div class="tech-note">${dict[lang].fallbackExplain}</div><button class="btn soft" onclick="practiceVoiceFallback(false)">${dict[lang].fallbackPractice}</button></div><div id="fb" class="feedback"></div></div>`;setTimeout(speakCurrent,350)}
+
+function render4(q){
+    const distract=shuffle(WORDS.filter(x=>x.w!==q.w)).slice(0,3); const opts=shuffle([q,...distract]);
+    document.getElementById('gameBody').innerHTML=`<div class="prompt"><span class="emoji" style="font-size:120px">${q.e}</span><p class="lead">${dict[lang].lead4}</p>
+    <div class="actions"><button class="btn primary" onclick="speakCurrent()">${dict[lang].btnHear}</button></div>
+    <div class="choices">${opts.map(x=>`<button class="choice" onclick="pickMatch(this,'${x.w}')">${x.w}</button>`).join('')}</div><div id="fb" class="feedback"></div></div>`}
+function pickMatch(btn,w){if(w===deck[i].w){btn.classList.add('good');correct(`${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`);}else{btn.classList.add('wrong');btn.disabled=true;wrong(dict[lang].fbAlmost);}}
+
+function render5(q){
+    const w = q.w; let idx=[...Array(w.length).keys()];
+    let hide=shuffle(idx.filter(x=>x>0&&x<w.length-1)); if(!hide.length) hide=shuffle(idx);
+    const n=Math.max(1,Math.min(Math.ceil(w.length*0.5),hide.length)); const hiddenSet = new Set(hide.slice(0,n));
+    let html = `<div class="prompt"><span class="emoji">${q.e}</span><p class="lead">${dict[lang].lead5}</p>
+    <div class="actions"><button class="btn primary" onclick="speakCurrent()">${dict[lang].btnHear}</button></div><div class="builder-row">`;
+    for(let j=0; j<w.length; j++){
+        if(hiddenSet.has(j)){ html += `<input type="text" maxlength="1" class="builder-input" data-idx="${j}" oninput="moveFocus(this)" autocomplete="off">`; } 
+        else { html += `<span class="builder-char">${w[j]}</span>`; }
+    }
+    html += `</div><div class="actions"><button class="btn mint" onclick="checkBuilder()">${dict[lang].btnSubmit}</button></div><div id="fb" class="feedback"></div></div>`;
+    document.getElementById('gameBody').innerHTML = html;
+    const firstInput = document.querySelector('.builder-input'); if(firstInput) firstInput.focus();
+}
+function moveFocus(el){
+    if(el.value.length === 1){
+        const inputs = document.querySelectorAll('.builder-input');
+        const next = [...inputs].find(input => input.dataset.idx > el.dataset.idx && input.value === "");
+        if(next) next.focus();
+    }
+}
+function checkBuilder(){
+    const inputs = document.querySelectorAll('.builder-input'); let allCorrect = true;
+    inputs.forEach(input => {
+        const expected = deck[i].w[input.dataset.idx].toLowerCase(); const typed = input.value.toLowerCase();
+        if(typed === expected){ input.classList.add('correct'); input.disabled = true; } 
+        else { allCorrect = false; input.value = ""; input.classList.remove('correct'); }
+    });
+    if(allCorrect) correct(`${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`);
+    else { wrong(dict[lang].fbAlmost, 'hint'); const firstEmpty = [...inputs].find(i => !i.disabled); if(firstEmpty) firstEmpty.focus(); }
+}
+
+// --- MISSION 6: BEE ARENA PROTOCOL ---
+function render6(q){
+    targetWord=q.w;spellingIndex=0;recognizedLetters=[];timeLeft=45;beeState=1;document.getElementById('timerStat').textContent=`⏱️ ${timeLeft}s`;document.getElementById('timerStat').classList.remove('overtime');
+    document.getElementById('gameBody').innerHTML=`<div class="prompt"><div class="badge" style="background:#FFEAA7;color:#523900">🏆 OFFICIAL ROUND · ${dict[lang].wordStat.toUpperCase()} ${i+1}</div>
+      <div class="bee-steps"><div id="bStep1" class="bee-step">${dict[lang].bs1}</div><div id="bStep2" class="bee-step">${dict[lang].bs2}</div><div id="bStep3" class="bee-step">${dict[lang].bs3}</div></div>
+      <div class="bee-notice" id="beeNotice">🐝 <strong>Bee Arena Simulation:</strong> ${dict[lang].beeNotice}</div><p class="lead" id="beeInstructions">${dict[lang].lead6}</p>
+      <div class="actions"><button class="btn primary" onclick="speakCurrent()">${dict[lang].btnHear}</button><button id="micBtn" class="btn warm"></button></div><div id="micStatus" class="mic-status"></div>
+      <div class="spell-slots" id="beeSpellSlots" style="display:none"></div><div class="transcript" id="trans"></div><div id="manualFallback" class="manual-fallback hidden"></div><div id="fb" class="feedback"></div></div>`;
+    updateBeeArenaUI();setTimeout(speakCurrent,300);timer=setInterval(()=>{timeLeft--;const stat=document.getElementById('timerStat');if(!stat)return;if(timeLeft>=0)stat.textContent=`⏱️ ${timeLeft}s`;else{stat.textContent=`⏱️ +${Math.abs(timeLeft)}s`;stat.classList.add('overtime');if(!studentSession.overtime){studentSession.overtime=true;auditEvent('BEE_OVERTIME',{notes:'Reference timer reached zero',eventKey:`${currentItemKey()}|BEE_OVERTIME`});fb(`⏱️ ${dict[lang].keepGoing}`,'hint')}}},1000)
+}
+function updateBeeArenaUI(){
+    const s1=document.getElementById('bStep1'),s2=document.getElementById('bStep2'),s3=document.getElementById('bStep3'),mic=document.getElementById('micBtn'),slots=document.getElementById('beeSpellSlots'),trans=document.getElementById('trans'),fallback=document.getElementById('manualFallback');if(!s1||!mic)return;
+    s1.className='bee-step';s2.className='bee-step';s3.className='bee-step';if(trans)trans.textContent='';if(fallback){fallback.classList.add('hidden');fallback.innerHTML=''}
+    if(beeState===1){s1.classList.add('active');mic.innerHTML=dict[lang].btnSayWord;mic.onclick=()=>startWordRecognition(true);slots.style.display='none';document.getElementById('beeInstructions').textContent=lang==='es'?'Paso 1: di la palabra completa. El tiempo no te elimina.':'Step 1: say the whole word. Time never eliminates you.';if(micState.permission==='blocked')showBeeManualSayFallback()}
+    else if(beeState===2){s1.classList.add('done');s2.classList.add('active');mic.innerHTML=dict[lang].btnMicSpell;mic.onclick=()=>toggleSpellingMic('micBtn',true);recognizedLetters=[];spellingIndex=0;slots.innerHTML=targetWord.split('').map((c,idx)=>`<div class="spell-slot ${idx===0?'active-target':''}" id="spSlot${idx}"></div>`).join('');slots.style.display='flex';document.getElementById('beeInstructions').textContent=lang==='es'?'Paso 2: deletrea letra por letra.':'Step 2: spell one letter at a time.';if(micState.permission==='blocked'){fallback.classList.remove('hidden');fallback.innerHTML=`<div class="tech-note">${dict[lang].fallbackExplain}</div><input id="manualSpellInput" class="fallback-input" autocomplete="off" placeholder="A B C…"><div class="actions"><button class="btn soft" onclick="submitManualSpelling(true)">${dict[lang].checkSpelling}</button></div>`}}
+    else if(beeState===3){s1.classList.add('done');s2.classList.add('done');s3.classList.add('active');mic.innerHTML=dict[lang].btnSayWord;mic.onclick=()=>startWordRecognition(true);slots.style.display='flex';document.getElementById('beeInstructions').textContent=lang==='es'?'Paso 3: vuelve a decir la palabra para cerrar la ronda.':'Step 3: say the word again to finish the round.';if(micState.permission==='blocked')showBeeManualSayFallback()}
+}
+
+function reward(e){const r=e.currentTarget.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2)}
+function rewardCenter(){burst(innerWidth/2,Math.min(innerHeight*.55,430))}
+function burst(x,y){const icons=['⭐','🌟','✨','💙','💛','🐝','🔤'];for(let n=0;n<26;n++){const p=document.createElement('div');p.className='pop';p.textContent=icons[Math.floor(Math.random()*icons.length)];p.style.left=(x-8)+'px';p.style.top=(y-5)+'px';p.style.fontSize=(14+Math.random()*20)+'px';p.style.setProperty('--dx',((Math.random()*160)-80)+'px');p.style.setProperty('--rot',((Math.random()*120)-60)+'deg');document.body.appendChild(p);setTimeout(()=>p.remove(),1300)}}
+
+window.addEventListener('pagehide',()=>{if(studentSession.sessionId)auditEvent('SESSION_END',{notes:'Page closed',eventKey:`${studentSession.sessionId}|SESSION_END`})});
+initBG(); buildBank(); applyLang();
+</script>
 </body>
 </html>
