@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>CEVAZ · Spelling Bee Practice Lab · Level 1</title>
 <style>
 :root{
@@ -83,6 +86,7 @@ body{overflow-x:hidden}
       <input id="studentNameInput" class="name-input" maxlength="50" autocomplete="given-name" placeholder="Your name" data-i18n-placeholder="gatePlaceholder" onkeydown="if(event.key==='Enter') startStudent()">
       <div class="actions"><button id="startPracticeBtn" class="btn primary" onclick="startStudent()" data-i18n="gateStart">🚀 Start Practice</button><button id="gateMicTestBtn" class="btn soft" onclick="testGateMicrophone()" data-i18n="gateMicTest">🎤 Test microphone</button></div>
       <div id="gateMicStatus" class="mic-status"></div>
+      <div id="gateMicHelp" class="tech-note">🎤 The test checks permission → microphone audio → live transcription. Follow the message shown here.</div>
       <div id="gateError" class="gate-error"></div>
       <div class="privacy-note" data-i18n="gatePrivacy">Use only your first name (or first name + last initial). No email or other personal information is needed.</div>
     </div>
@@ -134,7 +138,7 @@ body{overflow-x:hidden}
 const dict = {
     en: {
         sub: "A progressive practice space for listening, word recognition, spelling recall, pronunciation practice, and competition readiness.",
-        gateTitle: "Ready to practice?", gateCopy: "Enter your name so your practice can be saved and your teacher can see your progress.", gatePlaceholder: "Your name", gateStart: "🚀 Start Practice", gatePrivacy: "Use the name format your teacher requests (preferably first name + last name or last initial). No email or other personal information is needed.", gateMicTest: "🎤 Test microphone", gateMicReady: "✅ Microphone ready.", gateMicDenied: "Microphone access is blocked. Allow Microphone in this site permissions and try again.", gateMicUnsupported: "Speech recognition is not supported here. Use current Chrome or Edge.", gateMicHttps: "Open the published HTTPS GitHub Pages link to use the microphone.",
+        gateTitle: "Ready to practice?", gateCopy: "Enter your name so your practice can be saved and your teacher can see your progress.", gatePlaceholder: "Your name", gateStart: "🚀 Start Practice", gatePrivacy: "Use the name format your teacher requests (preferably first name + last name or last initial). No email or other personal information is needed.", gateMicTest: "🎤 Test microphone", gateMicReady: "✅ Microphone ready.", gateMicDenied: "Microphone access is blocked. Allow Microphone in this site permissions and try again.", gateMicUnsupported: "Speech recognition is not supported here. Use current Chrome or Edge.", gateMicHttps: "Open the published HTTPS GitHub Pages link to use the microphone.", gateMicHelp: "🎤 The test checks permission → microphone audio → live transcription. Follow the message shown here.",
         beeNotice: "This simulates a real Spelling Bee round: SAY the word, SPELL it, then SAY it again. The timer is only a reference. You can keep participating even after time reaches zero.",
         heard: "I heard", keepGoing: "Keep going — the timer is only a reference.",
         micPreparing: "Preparing microphone…", micReady: "Microphone ready.", micDenied: "Microphone access was blocked. Allow it in the browser site permissions and try again.", micSandbox: "This Google Apps Script page cannot receive microphone permission. Use the external HTTPS version for voice recognition; the fallback below remains available.", micNoDevice: "No working microphone was found on this device.", micNoSpeech: "I did not hear speech. Try again when you are ready.", micUnsupported: "Speech recognition is not available in this browser. Chrome or Edge is recommended.", micHttps: "Microphone access requires a secure HTTPS page.", fallbackSpell: "⌨️ Keyboard fallback", fallbackPractice: "I practiced it aloud — continue", fallbackExplain: "Technical fallback: this keeps practice moving but is logged separately and is not treated as proof of oral pronunciation.", checkSpelling: "Check spelling",
@@ -162,7 +166,7 @@ const dict = {
     },
     es: {
         sub: "Espacio de práctica para comprensión auditiva, deletreo interactivo y pronunciación de la competencia Spelling Bee.",
-        gateTitle: "¿Listo para practicar?", gateCopy: "Escribe tu nombre para guardar tu práctica y que tu teacher pueda ver tu progreso.", gatePlaceholder: "Tu nombre", gateStart: "🚀 Empezar práctica", gatePrivacy: "Usa el formato de nombre que indique tu teacher (preferiblemente nombre + apellido o inicial). No necesitas correo ni otros datos personales.", gateMicTest: "🎤 Probar micrófono", gateMicReady: "✅ Micrófono listo.", gateMicDenied: "El acceso al micrófono está bloqueado. Permite Micrófono en los permisos de este sitio e inténtalo de nuevo.", gateMicUnsupported: "El reconocimiento de voz no está soportado aquí. Usa Chrome o Edge actualizado.", gateMicHttps: "Abre el enlace HTTPS publicado en GitHub Pages para usar el micrófono.",
+        gateTitle: "¿Listo para practicar?", gateCopy: "Escribe tu nombre para guardar tu práctica y que tu teacher pueda ver tu progreso.", gatePlaceholder: "Tu nombre", gateStart: "🚀 Empezar práctica", gatePrivacy: "Usa el formato de nombre que indique tu teacher (preferiblemente nombre + apellido o inicial). No necesitas correo ni otros datos personales.", gateMicTest: "🎤 Probar micrófono", gateMicReady: "✅ Micrófono listo.", gateMicDenied: "El acceso al micrófono está bloqueado. Permite Micrófono en los permisos de este sitio e inténtalo de nuevo.", gateMicUnsupported: "El reconocimiento de voz no está soportado aquí. Usa Chrome o Edge actualizado.", gateMicHttps: "Abre el enlace HTTPS publicado en GitHub Pages para usar el micrófono.", gateMicHelp: "🎤 La prueba revisa permiso → audio del micrófono → transcripción en vivo. Sigue el mensaje que aparece aquí.",
         beeNotice: "Esta actividad simula una ronda real del Spelling Bee: DI la palabra, DELETRÉALA y vuelve a DECIRLA. El cronómetro es solo una referencia. Puedes seguir participando aunque llegue a cero.",
         heard: "Escuché", keepGoing: "Sigue participando — el cronómetro es solo una referencia.",
         micPreparing: "Preparando micrófono…", micReady: "Micrófono listo.", micDenied: "El navegador bloqueó el micrófono. Permite el acceso en los permisos del sitio e inténtalo de nuevo.", micSandbox: "Esta página de Google Apps Script no puede recibir permiso de micrófono. Usa la versión externa HTTPS para reconocimiento de voz; el modo alternativo seguirá disponible.", micNoDevice: "No se encontró un micrófono funcional en este dispositivo.", micNoSpeech: "No escuché voz. Inténtalo otra vez cuando estés listo.", micUnsupported: "El reconocimiento de voz no está disponible en este navegador. Se recomienda Chrome o Edge.", micHttps: "El micrófono necesita una página segura HTTPS.", fallbackSpell: "⌨️ Alternativa con teclado", fallbackPractice: "Ya practiqué en voz alta — continuar", fallbackExplain: "Alternativa técnica: permite seguir practicando, pero se registra aparte y no se toma como evidencia de pronunciación oral.", checkSpelling: "Revisar deletreo",
@@ -203,6 +207,7 @@ function applyLang() {
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         el.placeholder = dict[lang][el.getAttribute('data-i18n-placeholder')] || el.placeholder;
     });
+    const gh=document.getElementById('gateMicHelp');if(gh)gh.textContent=dict[lang].gateMicHelp;
     updateMeta();
     if(document.getElementById('game').classList.contains('show')) render(); 
 }
@@ -224,7 +229,7 @@ let voice=null, allUSVoices=[];
 let targetWord = "", spellingIndex = 0, currentRecognition = null;
 let beeState = 1; // Used in Mission 6: 1=Say, 2=Spell, 3=Say Again
 
-const APP_VERSION = '4.2.0';
+const APP_VERSION = '4.3.0';
 const ACTIVITY_SKILLS = {
   1:'Listening → orthographic mapping',
   2:'Oral spelling / letter-name retrieval',
@@ -245,6 +250,10 @@ let micState={active:false,generation:0,permission:'unknown',lastError:'',btnId:
 let micStream=null;
 let micRecorder=null;
 let micRecorderChunks=[];
+let micDeviceLabel='';
+const UA=navigator.userAgent||'';
+const IS_IOS=/iPad|iPhone|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const IS_DESKTOP_CHROMIUM=!IS_IOS&&/(Chrome|Chromium|Edg)\//.test(UA);
 
 function hasAppsScript(){ return typeof google !== 'undefined' && google.script && google.script.run; }
 function safeClientId(prefix='ID') { return prefix+'-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,9).toUpperCase(); }
@@ -460,6 +469,7 @@ async function openMicStream(){
     const tracks=stream.getAudioTracks();
     if(!tracks.length){stream.getTracks().forEach(t=>t.stop());throw Object.assign(new Error('No audio track'),{code:'NO_DEVICE'})}
     micStream=stream;
+    micDeviceLabel=tracks[0]?.label||micDeviceLabel||'';
     tracks.forEach(track=>{
         track.onended=()=>{if(micStream===stream){micStream=null;micState.permission='unknown'}};
     });
@@ -471,14 +481,29 @@ function getLiveMicTrack(){
     if(track)track.enabled=true;
     return track;
 }
-function startRecognitionWithOpenMic(recognition){
+function releaseMicStreamForDesktopRecognition(){
+    if(!IS_DESKTOP_CHROMIUM)return;
+    if(micStream){
+        try{micStream.getTracks().forEach(t=>t.stop())}catch(e){}
+        micStream=null;
+    }
+}
+function startRecognitionCompat(recognition){
+    // Desktop Chrome/Edge works most reliably when SpeechRecognition owns the
+    // microphone instead of competing with an open getUserMedia capture.
+    if(IS_DESKTOP_CHROMIUM){
+        releaseMicStreamForDesktopRecognition();
+        recognition.start();
+        return 'desktop-browser-microphone';
+    }
+    // iOS/WebKit currently works well with the already-authorized live track.
     const track=getLiveMicTrack();
     if(track){
         try{
             recognition.start(track);
             return 'media-stream-track';
         }catch(err){
-            console.warn('SpeechRecognition.start(audioTrack) unavailable; falling back to browser microphone.',err);
+            console.warn('SpeechRecognition.start(audioTrack) unavailable; using browser microphone.',err);
         }
     }
     recognition.start();
@@ -528,7 +553,7 @@ async function testSpeechRecognitionOnce(timeoutMs=6500){
             finish(reject,Object.assign(new Error(e.error||code),{code}));
         };
         r.onend=()=>{if(!done&&last)finish(resolve,last)};
-        try{startRecognitionWithOpenMic(r)}catch(err){finish(reject,Object.assign(err,{code:'RECOGNITION_ERROR'}))}
+        try{startRecognitionCompat(r)}catch(err){finish(reject,Object.assign(err,{code:'RECOGNITION_ERROR'}))}
     });
 }
 async function testGateMicrophone(){
@@ -537,22 +562,42 @@ async function testGateMicrophone(){
     const set=(msg,kind='hint')=>{if(el){el.textContent=msg;el.className='mic-status show '+kind}};
     if(btn){btn.disabled=true;btn.textContent=lang==='es'?'🎤 Probando…':'🎤 Testing…'}
     try{
+        set(lang==='es'?'Paso 1 de 3 · Solicitando permiso para usar el micrófono…':'Step 1 of 3 · Requesting microphone permission…','hint');
         const stream=await openMicStream();
-        const captured=await verifyRecordedAudio(stream,700);
+
+        const track=getLiveMicTrack();
+        const micName=(track&&track.label)||micDeviceLabel||'';
+        set((lang==='es'?'Paso 2 de 3 · Micrófono abierto':'Step 2 of 3 · Microphone open')+(micName?' — '+micName:'')+(lang==='es'?'. Comprobando que llegue audio…':'. Checking that audio is arriving…'),'hint');
+
+        const captured=await verifyRecordedAudio(stream,850);
         if(!captured)throw Object.assign(new Error('No microphone audio captured'),{code:'AUDIO_CAPTURE'});
-        const track=getLiveMicTrack();const micName=track&&track.label?track.label:'';set((lang==='es'?'🎤 Micrófono abierto':'🎤 Microphone open')+(micName?' — '+micName:'')+(lang==='es'?'. Di “hello” para probar la transcripción…':'. Say “hello” to test transcription…'),'hint');
-        const transcript=await testSpeechRecognitionOnce();
+
+        if(IS_DESKTOP_CHROMIUM) releaseMicStreamForDesktopRecognition();
+
+        set(lang==='es'
+          ?'Paso 3 de 3 · 🎤 DI “HELLO” AHORA. Estoy escuchando y voy a mostrar lo que entendí.'
+          :'Step 3 of 3 · 🎤 SAY “HELLO” NOW. I am listening and will show what I heard.','good');
+
+        const transcript=await testSpeechRecognitionOnce(8000);
         micState.permission='granted';micState.lastError='';
-        set((lang==='es'?'✅ Micrófono y transcripción listos. Escuché: “':'✅ Microphone and transcription ready. I heard: “')+transcript+'”','good');
+        set((lang==='es'?'✅ Todo listo. Micrófono + transcripción funcionan. Escuché: “':'✅ All ready. Microphone + transcription are working. I heard: “')+transcript+'”','good');
         return true;
     }catch(err){
         const code=err&&err.code||'DENIED';
         if(code==='INSECURE')set(dict[lang].gateMicHttps,'bad');
         else if(code==='UNSUPPORTED')set(dict[lang].gateMicUnsupported,'bad');
-        else if(code==='NO_SPEECH')set(lang==='es'?'El micrófono abrió, pero no detecté voz. Di “hello” cerca del micrófono e inténtalo otra vez.':'The microphone opened, but I did not detect speech. Say “hello” near the microphone and try again.','bad');
-        else if(code==='NETWORK')set(lang==='es'?'El micrófono abrió, pero el servicio de transcripción del navegador no respondió. Prueba Chrome/Edge y verifica internet.':'The microphone opened, but the browser speech service did not respond. Try Chrome/Edge and check internet.','bad');
-        else if(code==='AUDIO_CAPTURE')set(lang==='es'?'El navegador dio permiso, pero no está llegando audio del micrófono. Revisa el micrófono seleccionado en el sistema.':'Permission was granted, but no microphone audio is arriving. Check the selected microphone in your system.','bad');
-        else set(dict[lang].gateMicDenied||dict[lang].micDenied,'bad');
+        else if(code==='NO_SPEECH')set(lang==='es'
+          ?'⚠️ El micrófono abrió, pero no detecté voz. Pulsa PROBAR MICRÓFONO otra vez y di “HELLO” cuando aparezca el Paso 3.'
+          :'⚠️ The microphone opened, but I did not detect speech. Press TEST MICROPHONE again and say “HELLO” when Step 3 appears.','bad');
+        else if(code==='NETWORK')set(lang==='es'
+          ?'⚠️ El micrófono sí abrió, pero Chrome/Edge no pudo conectar con su servicio de transcripción. Verifica internet, recarga la página y vuelve a probar.'
+          :'⚠️ The microphone opened, but Chrome/Edge could not reach its transcription service. Check internet, reload, and try again.','bad');
+        else if(code==='AUDIO_CAPTURE')set(lang==='es'
+          ?'⚠️ El navegador dio permiso, pero no recibo audio. En Windows revisa Configuración → Sistema → Sonido → Entrada y selecciona el micrófono correcto.'
+          :'⚠️ Permission was granted, but I am not receiving audio. In Windows check Settings → System → Sound → Input and select the correct microphone.','bad');
+        else set(lang==='es'
+          ?'⚠️ El navegador bloqueó el micrófono. Haz clic en el candado junto a la dirección → Micrófono → Permitir, recarga y vuelve a probar.'
+          :'⚠️ The browser blocked the microphone. Click the lock beside the address → Microphone → Allow, reload, and test again.','bad');
         return false;
     }finally{
         if(btn){btn.disabled=false;btn.textContent=dict[lang].gateMicTest}
@@ -575,8 +620,16 @@ async function ensureMicrophone(){
         const stream=await openMicStream();
         const tracks=stream.getAudioTracks();
         if(!tracks.length||tracks.every(t=>t.readyState!=='live')){micFailure('NO_DEVICE');return false}
+        micDeviceLabel=tracks[0]?.label||micDeviceLabel||'';
         if('speechSynthesis'in window)try{speechSynthesis.cancel()}catch(e){}
-        micState.permission='granted';micState.lastError='';setMicStatus('READY','good');const s=document.getElementById('micStatus');const track=getLiveMicTrack();if(s&&track&&track.label)s.textContent=(lang==='es'?'🎤 Micrófono listo: ':'🎤 Microphone ready: ')+track.label;return true;
+        micState.permission='granted';micState.lastError='';
+        const s=document.getElementById('micStatus');
+        if(s){
+            s.textContent=(lang==='es'?'✅ Micrófono listo':'✅ Microphone ready')+(micDeviceLabel?' — '+micDeviceLabel:'')+(lang==='es'?'. Cuando cambie a “Escuchando”, habla.':'. When it changes to “Listening”, speak.');
+            s.className='mic-status show good';
+        }
+        if(IS_DESKTOP_CHROMIUM)releaseMicStreamForDesktopRecognition();
+        return true;
     }catch(err){
         const n=err&&err.name||'';let code=err&&err.code||'DENIED';
         if(code==='DENIED'){
@@ -613,7 +666,7 @@ function runSpellingRecognition(gen,isBeeArena){
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     const r=new SR();currentRecognition=r;r.lang='en-US';r.continuous=true;r.interimResults=true;r.maxAlternatives=5;
     let lastProcessedFinal='';
-    r.onstart=()=>{listening=true;micState.speechDetected=false;setMicStatus('READY','good')};
+    r.onstart=()=>{listening=true;micState.speechDetected=false;const el=document.getElementById('micStatus');if(el){el.textContent=lang==='es'?'🎤 ESCUCHANDO AHORA · Deletrea una letra a la vez.':'🎤 LISTENING NOW · Spell one letter at a time.';el.className='mic-status show good'}};
     r.onaudiostart=()=>setMicStatus('READY','good');
     r.onspeechstart=()=>{micState.speechDetected=true;const el=document.getElementById('micStatus');if(el){el.textContent=lang==='es'?'🎤 Te estoy escuchando…':'🎤 I am listening…';el.className='mic-status show good'}};
     r.onresult=e=>{
@@ -640,7 +693,7 @@ function runSpellingRecognition(gen,isBeeArena){
             setTimeout(()=>{if(micState.active&&gen===micState.generation)runSpellingRecognition(gen,isBeeArena)},650);
         }else if(!micState.active)stopMicUI(micState.btnId||'micBtn',true)
     };
-    setTimeout(()=>{if(!micState.active||gen!==micState.generation)return;try{startRecognitionWithOpenMic(r)}catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(micState.btnId||'micBtn',true)}},220)
+    (IS_DESKTOP_CHROMIUM?(()=>{if(!micState.active||gen!==micState.generation)return;try{startRecognitionCompat(r)}catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(micState.btnId||'micBtn',true)}})():setTimeout(()=>{if(!micState.active||gen!==micState.generation)return;try{startRecognitionCompat(r)}catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(micState.btnId||'micBtn',true)}},180))
 }
 async function startWordRecognition(isBeeArena=false){
     if(micState.active){stopMicUI(isBeeArena?'micBtn':'mic3');return}
@@ -650,7 +703,7 @@ async function startWordRecognition(isBeeArena=false){
     const btnId=isBeeArena?'micBtn':'mic3';micState.active=true;micState.btnId=btnId;micState.mode='word';micState.generation++;const gen=micState.generation;
     r.lang='en-US';r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
     let last='';
-    r.onstart=()=>{listening=true;micState.speechDetected=false;const b=document.getElementById(btnId);if(b){b.classList.add('pulse');b.innerHTML=dict[lang].btnMicStop}};
+    r.onstart=()=>{listening=true;micState.speechDetected=false;const b=document.getElementById(btnId);if(b){b.classList.add('pulse');b.innerHTML=dict[lang].btnMicStop};const s=document.getElementById('micStatus');if(s){s.textContent=lang==='es'?'🎤 ESCUCHANDO AHORA · Di la palabra completa.':'🎤 LISTENING NOW · Say the whole word.';s.className='mic-status show good'}};
     r.onspeechstart=()=>{micState.speechDetected=true;const s=document.getElementById('micStatus');if(s){s.textContent=lang==='es'?'🎤 Te estoy escuchando…':'🎤 I am listening…';s.className='mic-status show good'}};
     r.onresult=e=>{
         const result=e.results[e.results.length-1],alts=[];
@@ -677,7 +730,7 @@ async function startWordRecognition(isBeeArena=false){
         }
     };
     r.onend=()=>{if(gen!==micState.generation)return;micState.active=false;listening=false;if(currentRecognition===r)currentRecognition=null;const b=document.getElementById(btnId);if(b){b.classList.remove('pulse');b.innerHTML=dict[lang].btnSayWord};if(last&&micState.permission==='granted')setMicStatus('READY','good')};
-    setTimeout(()=>{if(!micState.active||gen!==micState.generation)return;try{startRecognitionWithOpenMic(r)}catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(btnId,true)}},220)
+    (IS_DESKTOP_CHROMIUM?(()=>{if(!micState.active||gen!==micState.generation)return;try{startRecognitionCompat(r)}catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(btnId,true)}})():setTimeout(()=>{if(!micState.active||gen!==micState.generation)return;try{startRecognitionCompat(r)}catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(btnId,true)}},180))
 }
 function submitManualSpelling(isBeeArena=false){const input=document.getElementById('manualSpellInput');if(!input)return;const typed=norm(input.value);if(typed===norm(targetWord)){auditEvent('MANUAL_FALLBACK',{result:'CORRECT',techStatus:'MANUAL_FALLBACK',notes:'Keyboard fallback used',eventKey:`${currentItemKey()}|MANUAL_FALLBACK|CORRECT`});if(isBeeArena){beeState=3;updateBeeArenaUI();showBeeManualSayFallback()}else practiceOnlyComplete(`⭐ ${dict[lang].fbCorrect} <strong>${targetWord.toUpperCase()}</strong>`,'Correct keyboard fallback; oral skill not scored')}else{auditEvent('MANUAL_FALLBACK',{result:'TRY_AGAIN',techStatus:'MANUAL_FALLBACK',notes:`Typed: ${input.value}`,eventKey:`${currentItemKey()}|MANUAL_FALLBACK|TRY|${Date.now()}`});fb(dict[lang].fbAlmost,'hint');input.focus()}}
 function practiceVoiceFallback(isBeeArena=false){auditEvent('MANUAL_FALLBACK',{result:'PRACTICED_ALOUD',techStatus:'MANUAL_FALLBACK',notes:'Student self-reported oral practice; not scored',eventKey:`${currentItemKey()}|PRACTICED_ALOUD|${beeState}|${Date.now()}`});if(isBeeArena){beeState++;if(beeState===2)updateBeeArenaUI();else if(beeState>3){practiceOnlyComplete(lang==='es'?'🐝 Ronda practicada.':'🐝 Round practiced.','Bee Arena completed with technical fallback')}else updateBeeArenaUI()}else practiceOnlyComplete(lang==='es'?'🎤 Práctica oral registrada.':'🎤 Oral practice recorded.','Voice Challenge technical fallback')}
