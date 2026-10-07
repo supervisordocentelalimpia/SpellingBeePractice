@@ -224,7 +224,7 @@ let voice=null, allUSVoices=[];
 let targetWord = "", spellingIndex = 0, currentRecognition = null;
 let beeState = 1; // Used in Mission 6: 1=Say, 2=Spell, 3=Say Again
 
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.1.0';
 const ACTIVITY_SKILLS = {
   1:'Listening → orthographic mapping',
   2:'Oral spelling / letter-name retrieval',
@@ -241,7 +241,10 @@ if(queryApi) localStorage.setItem('spellingBeeBackendUrl', queryApi);
 let studentSession = {studentId:'', sessionId:'', launchKey:'', name:'', startedAt:0, activityStartedAt:0, activityRunId:'', overtime:false};
 let recognizedLetters = [];
 let startInFlight=false, itemSolved=false, answerBusy=false;
-let micState={active:false,generation:0,permission:'unknown',lastError:'',btnId:'',mode:''};
+let micState={active:false,generation:0,permission:'unknown',lastError:'',btnId:'',mode:'',speechDetected:false};
+let micStream=null;
+let micRecorder=null;
+let micRecorderChunks=[];
 
 function hasAppsScript(){ return typeof google !== 'undefined' && google.script && google.script.run; }
 function safeClientId(prefix='ID') { return prefix+'-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,9).toUpperCase(); }
@@ -295,6 +298,7 @@ function startStudent(){
     },()=>{startInFlight=false;if(btn){btn.disabled=false;btn.textContent=dict[lang].gateStart};err.textContent=lang==='es'?'No pude guardar ahora, pero puedes volver a intentarlo.':'I could not save right now. Please try again.'});
 }
 function changeStudent(){
+    stopMicStream();
     if(studentSession.sessionId) auditEvent('SESSION_END',{notes:'Student changed',eventKey:`${studentSession.sessionId}|SESSION_END`});
     stopAll();const oldName=studentSession.name;studentSession={studentId:'',sessionId:'',launchKey:'',name:'',startedAt:0,activityStartedAt:0,activityRunId:'',overtime:false};
     localStorage.removeItem('spellingBeeStudentId');localStorage.removeItem('spellingBeeStudentName');
@@ -435,25 +439,101 @@ const phoneticMap = {
 };
 
 
+
+function stopMicStream(){
+    if(micRecorder && micRecorder.state!=='inactive'){try{micRecorder.stop()}catch(e){}}
+    micRecorder=null;micRecorderChunks=[];
+    if(micStream){try{micStream.getTracks().forEach(t=>t.stop())}catch(e){}}
+    micStream=null;
+}
+async function openMicStream(){
+    if(micStream){
+        const live=micStream.getAudioTracks().some(t=>t.readyState==='live');
+        if(live)return micStream;
+        stopMicStream();
+    }
+    if(!window.isSecureContext)throw Object.assign(new Error('HTTPS required'),{code:'INSECURE'});
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Object.assign(new Error('getUserMedia unavailable'),{code:'UNSUPPORTED'});
+    const stream=await navigator.mediaDevices.getUserMedia({
+        audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    });
+    const tracks=stream.getAudioTracks();
+    if(!tracks.length){stream.getTracks().forEach(t=>t.stop());throw Object.assign(new Error('No audio track'),{code:'NO_DEVICE'})}
+    micStream=stream;
+    tracks.forEach(track=>{
+        track.onended=()=>{if(micStream===stream){micStream=null;micState.permission='unknown'}};
+    });
+    return micStream;
+}
+async function verifyRecordedAudio(stream,duration=850){
+    if(typeof MediaRecorder!=='function')return true;
+    try{
+        micRecorderChunks=[];
+        const preferred=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(t=>MediaRecorder.isTypeSupported?.(t));
+        micRecorder=preferred?new MediaRecorder(stream,{mimeType:preferred}):new MediaRecorder(stream);
+        return await new Promise(resolve=>{
+            let settled=false;
+            const finish=(ok)=>{if(settled)return;settled=true;resolve(ok)};
+            micRecorder.ondataavailable=e=>{if(e.data&&e.data.size)micRecorderChunks.push(e.data)};
+            micRecorder.onerror=()=>finish(false);
+            micRecorder.onstop=()=>{
+                const bytes=micRecorderChunks.reduce((n,b)=>n+b.size,0);
+                finish(bytes>0);
+            };
+            micRecorder.start(150);
+            setTimeout(()=>{try{if(micRecorder.state!=='inactive')micRecorder.stop()}catch(e){finish(false)}},duration);
+        });
+    }catch(e){return true}
+}
+async function testSpeechRecognitionOnce(timeoutMs=6500){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR)throw Object.assign(new Error('Speech recognition unavailable'),{code:'UNSUPPORTED'});
+    if('speechSynthesis' in window)try{speechSynthesis.cancel()}catch(e){}
+    const r=new SR();r.lang='en-US';r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
+    return await new Promise((resolve,reject)=>{
+        let done=false,last='';
+        const finish=(fn,val)=>{if(done)return;done=true;clearTimeout(timeout);try{r.abort()}catch(e){}fn(val)};
+        const timeout=setTimeout(()=>finish(reject,Object.assign(new Error('No speech detected'),{code:'NO_SPEECH'})),timeoutMs);
+        r.onresult=e=>{
+            for(let i=e.resultIndex||0;i<e.results.length;i++){
+                const t=String(e.results[i][0]?.transcript||'').trim();
+                if(t)last=t;
+                if(e.results[i].isFinal&&last){finish(resolve,last);return}
+            }
+        };
+        r.onerror=e=>{
+            const code=e.error==='audio-capture'?'AUDIO_CAPTURE':
+              e.error==='no-speech'?'NO_SPEECH':
+              e.error==='not-allowed'||e.error==='service-not-allowed'?'DENIED':
+              e.error==='network'?'NETWORK':'RECOGNITION_ERROR';
+            finish(reject,Object.assign(new Error(e.error||code),{code}));
+        };
+        r.onend=()=>{if(!done&&last)finish(resolve,last)};
+        try{r.start()}catch(err){finish(reject,Object.assign(err,{code:'RECOGNITION_ERROR'}))}
+    });
+}
 async function testGateMicrophone(){
     const el=document.getElementById('gateMicStatus');
     const btn=document.getElementById('gateMicTestBtn');
     const set=(msg,kind='hint')=>{if(el){el.textContent=msg;el.className='mic-status show '+kind}};
     if(btn){btn.disabled=true;btn.textContent=lang==='es'?'🎤 Probando…':'🎤 Testing…'}
     try{
-        if(!window.isSecureContext){set(dict[lang].gateMicHttps,'bad');return false}
-        const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-        if(!SR){set(dict[lang].gateMicUnsupported,'bad');return false}
-        if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){set(dict[lang].gateMicUnsupported,'bad');return false}
-        const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-        const audioTracks=stream.getAudioTracks();
-        stream.getTracks().forEach(t=>t.stop());
-        if(!audioTracks.length){set(dict[lang].gateMicUnsupported,'bad');return false}
-        set(dict[lang].gateMicReady,'good');return true;
+        const stream=await openMicStream();
+        const captured=await verifyRecordedAudio(stream,700);
+        if(!captured)throw Object.assign(new Error('No microphone audio captured'),{code:'AUDIO_CAPTURE'});
+        set(lang==='es'?'🎤 Micrófono abierto. Di “hello” para probar la transcripción…':'🎤 Microphone open. Say “hello” to test transcription…','hint');
+        const transcript=await testSpeechRecognitionOnce();
+        micState.permission='granted';micState.lastError='';
+        set((lang==='es'?'✅ Micrófono y transcripción listos. Escuché: “':'✅ Microphone and transcription ready. I heard: “')+transcript+'”','good');
+        return true;
     }catch(err){
-        const n=String(err&&err.name||'');
-        if(n==='NotAllowedError'||n==='SecurityError')set(dict[lang].gateMicDenied,'bad');
-        else set(dict[lang].gateMicUnsupported,'bad');
+        const code=err&&err.code||'DENIED';
+        if(code==='INSECURE')set(dict[lang].gateMicHttps,'bad');
+        else if(code==='UNSUPPORTED')set(dict[lang].gateMicUnsupported,'bad');
+        else if(code==='NO_SPEECH')set(lang==='es'?'El micrófono abrió, pero no detecté voz. Di “hello” cerca del micrófono e inténtalo otra vez.':'The microphone opened, but I did not detect speech. Say “hello” near the microphone and try again.','bad');
+        else if(code==='NETWORK')set(lang==='es'?'El micrófono abrió, pero el servicio de transcripción del navegador no respondió. Prueba Chrome/Edge y verifica internet.':'The microphone opened, but the browser speech service did not respond. Try Chrome/Edge and check internet.','bad');
+        else if(code==='AUDIO_CAPTURE')set(lang==='es'?'El navegador dio permiso, pero no está llegando audio del micrófono. Revisa el micrófono seleccionado en el sistema.':'Permission was granted, but no microphone audio is arriving. Check the selected microphone in your system.','bad');
+        else set(dict[lang].gateMicDenied,'bad');
         return false;
     }finally{
         if(btn){btn.disabled=false;btn.textContent=dict[lang].gateMicTest}
@@ -461,7 +541,7 @@ async function testGateMicrophone(){
 }
 
 function micMessage(code){
-    const d=dict[lang];return ({PREPARING:d.micPreparing,READY:d.micReady,DENIED:d.micDenied,APPS_SCRIPT_SANDBOX:d.micSandbox,NO_DEVICE:d.micNoDevice,NO_SPEECH:d.micNoSpeech,UNSUPPORTED:d.micUnsupported,INSECURE:d.micHttps,AUDIO_CAPTURE:d.micNoDevice})[code]||d.micDenied;
+    const d=dict[lang];return ({PREPARING:d.micPreparing,READY:d.micReady,DENIED:d.micDenied,APPS_SCRIPT_SANDBOX:d.micSandbox,NO_DEVICE:d.micNoDevice,NO_SPEECH:d.micNoSpeech,UNSUPPORTED:d.micUnsupported,INSECURE:d.micHttps,AUDIO_CAPTURE:d.micNoDevice,NETWORK:(lang==='es'?'El micrófono funciona, pero el servicio de transcripción del navegador no respondió. Revisa internet y usa Chrome/Edge.':'The microphone works, but the browser transcription service did not respond. Check internet and use Chrome/Edge.'),RECOGNITION_ERROR:(lang==='es'?'El micrófono abrió, pero el reconocimiento de voz no pudo iniciar. Recarga la página y vuelve a probar.':'The microphone opened, but speech recognition could not start. Reload the page and try again.')})[code]||d.micDenied;
 }
 function setMicStatus(code,kind='hint'){
     const el=document.getElementById('micStatus');if(!el)return;el.textContent=micMessage(code);el.className=`mic-status show ${kind}`;
@@ -472,16 +552,18 @@ async function ensureMicrophone(){
     setMicStatus('PREPARING','hint');
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){micFailure('UNSUPPORTED');return false}
-    if(!window.isSecureContext){micFailure('INSECURE');return false}
-    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){micFailure(hasAppsScript()?'APPS_SCRIPT_SANDBOX':'UNSUPPORTED');return false}
     try{
-        const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-        stream.getTracks().forEach(t=>t.stop());micState.permission='granted';setMicStatus('READY','good');return true;
+        const stream=await openMicStream();
+        const tracks=stream.getAudioTracks();
+        if(!tracks.length||tracks.every(t=>t.readyState!=='live')){micFailure('NO_DEVICE');return false}
+        if('speechSynthesis'in window)try{speechSynthesis.cancel()}catch(e){}
+        micState.permission='granted';micState.lastError='';setMicStatus('READY','good');return true;
     }catch(err){
-        const n=err&&err.name||'';let code='DENIED';
-        if(hasAppsScript()&&(n==='NotAllowedError'||n==='SecurityError'))code='APPS_SCRIPT_SANDBOX';
-        else if(n==='NotFoundError'||n==='DevicesNotFoundError')code='NO_DEVICE';
-        else if(n==='NotReadableError'||n==='TrackStartError')code='AUDIO_CAPTURE';
+        const n=err&&err.name||'';let code=err&&err.code||'DENIED';
+        if(code==='DENIED'){
+            if(n==='NotFoundError'||n==='DevicesNotFoundError')code='NO_DEVICE';
+            else if(n==='NotReadableError'||n==='TrackStartError')code='AUDIO_CAPTURE';
+        }
         micFailure(code,err);return false;
     }
 }
@@ -496,23 +578,89 @@ function processGuidedSpelling(alternatives,isBeeArena=false){
     if(spellingIndex>=targetWord.length){stopMicUI('micBtn');if(isBeeArena){beeState=3;updateBeeArenaUI()}else setTimeout(()=>correct(`🏆 ${dict[lang].fbCorrect} <strong>${targetWord.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'}),250)}
 }
 function fillSpellingSlot(ch){if(spellingIndex>=targetWord.length)return;const slot=document.getElementById('spSlot'+spellingIndex);if(slot){slot.textContent=String(ch).toUpperCase();slot.classList.add('done');slot.classList.remove('active-target')}recognizedLetters.push(String(ch).toUpperCase());spellingIndex++;if(spellingIndex<targetWord.length){const nextSlot=document.getElementById('spSlot'+spellingIndex);if(nextSlot)nextSlot.classList.add('active-target')}}
-function stopMicUI(btnId,silent=false){micState.active=false;micState.generation++;listening=false;if(currentRecognition){try{currentRecognition.abort()}catch(e){}currentRecognition=null}const btn=document.getElementById(btnId);if(btn){btn.classList.remove('pulse');btn.innerHTML=(current===3||(current===6&&(beeState===1||beeState===3)))?dict[lang].btnSayWord:dict[lang].btnMicSpell}if(!silent&&micState.permission==='granted')setMicStatus('READY','good')}
+function stopMicUI(btnId,silent=false){
+    micState.active=false;micState.generation++;micState.speechDetected=false;listening=false;
+    if(currentRecognition){try{currentRecognition.abort()}catch(e){}currentRecognition=null}
+    const btn=document.getElementById(btnId);
+    if(btn){btn.classList.remove('pulse');btn.innerHTML=(current===3||(current===6&&(beeState===1||beeState===3)))?dict[lang].btnSayWord:dict[lang].btnMicSpell}
+    if(!silent&&micState.permission==='granted')setMicStatus('READY','good')
+}
 async function toggleSpellingMic(btnId,isBeeArena=false){
     if(micState.active){stopMicUI(btnId);return}if(!(await ensureMicrophone()))return;
     micState.active=true;micState.btnId=btnId;micState.mode='spell';micState.generation++;const gen=micState.generation;const btn=document.getElementById(btnId);if(btn){btn.classList.add('pulse');btn.innerHTML=dict[lang].btnMicStop}runSpellingRecognition(gen,isBeeArena);
 }
-function runSpellingRecognition(gen,isBeeArena){if(!micState.active||gen!==micState.generation||spellingIndex>=targetWord.length)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const r=new SR();currentRecognition=r;r.lang='en-US';r.continuous=false;r.interimResults=false;r.maxAlternatives=5;
-    r.onstart=()=>{listening=true};r.onresult=e=>{const result=e.results[0],alts=[];for(let a=0;a<result.length;a++)alts.push(result[a].transcript.trim());processGuidedSpelling(alts,isBeeArena)};
-    r.onerror=e=>{if(e.error==='no-speech'){setMicStatus('NO_SPEECH','hint');return}if(e.error==='aborted')return;micFailure(e.error==='audio-capture'?'AUDIO_CAPTURE':(hasAppsScript()&&e.error==='not-allowed'?'APPS_SCRIPT_SANDBOX':'DENIED'),new Error(e.error));micState.active=false};
-    r.onend=()=>{currentRecognition=null;listening=false;if(micState.active&&gen===micState.generation&&spellingIndex<targetWord.length)setTimeout(()=>runSpellingRecognition(gen,isBeeArena),180);else if(!micState.active)stopMicUI(micState.btnId||'micBtn',true)};try{r.start()}catch(err){micFailure('DENIED',err);stopMicUI(micState.btnId||'micBtn',true)}
+function runSpellingRecognition(gen,isBeeArena){
+    if(!micState.active||gen!==micState.generation||spellingIndex>=targetWord.length)return;
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    const r=new SR();currentRecognition=r;r.lang='en-US';r.continuous=true;r.interimResults=true;r.maxAlternatives=5;
+    let lastProcessedFinal='';
+    r.onstart=()=>{listening=true;micState.speechDetected=false;setMicStatus('READY','good')};
+    r.onaudiostart=()=>setMicStatus('READY','good');
+    r.onspeechstart=()=>{micState.speechDetected=true;const el=document.getElementById('micStatus');if(el){el.textContent=lang==='es'?'🎤 Te estoy escuchando…':'🎤 I am listening…';el.className='mic-status show good'}};
+    r.onresult=e=>{
+        for(let ri=e.resultIndex||0;ri<e.results.length;ri++){
+            const result=e.results[ri],alts=[];
+            for(let a=0;a<result.length;a++)alts.push(result[a].transcript.trim());
+            const preview=alts[0]||'';
+            const trans=document.getElementById('trans');if(trans&&preview)trans.innerHTML=`${dict[lang].heard}: <b>${preview}</b>`;
+            if(result.isFinal&&preview&&preview!==lastProcessedFinal){
+                lastProcessedFinal=preview;processGuidedSpelling(alts,isBeeArena);
+                if(spellingIndex>=targetWord.length)return;
+            }
+        }
+    };
+    r.onerror=e=>{
+        if(e.error==='no-speech'){setMicStatus('NO_SPEECH','hint');return}
+        if(e.error==='aborted')return;
+        const code=e.error==='audio-capture'?'AUDIO_CAPTURE':e.error==='network'?'NETWORK':(e.error==='not-allowed'||e.error==='service-not-allowed'?'DENIED':'RECOGNITION_ERROR');
+        micFailure(code,new Error(e.error));micState.active=false;
+    };
+    r.onend=()=>{
+        if(currentRecognition===r)currentRecognition=null;listening=false;
+        if(micState.active&&gen===micState.generation&&spellingIndex<targetWord.length){
+            setTimeout(()=>{if(micState.active&&gen===micState.generation)runSpellingRecognition(gen,isBeeArena)},650);
+        }else if(!micState.active)stopMicUI(micState.btnId||'micBtn',true)
+    };
+    try{setTimeout(()=>{if(micState.active&&gen===micState.generation)r.start()},120)}
+    catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(micState.btnId||'micBtn',true)}
 }
 async function startWordRecognition(isBeeArena=false){
-    if(micState.active){stopMicUI(isBeeArena?'micBtn':'mic3');return}if(!(await ensureMicrophone()))return;
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const r=new SR();currentRecognition=r;const btnId=isBeeArena?'micBtn':'mic3';micState.active=true;micState.btnId=btnId;micState.mode='word';micState.generation++;const gen=micState.generation;r.lang='en-US';r.continuous=false;r.interimResults=false;r.maxAlternatives=5;
-    r.onstart=()=>{listening=true;const b=document.getElementById(btnId);if(b){b.classList.add('pulse');b.innerHTML=dict[lang].btnMicStop}};
-    r.onerror=e=>{if(e.error==='no-speech'){setMicStatus('NO_SPEECH','hint');auditEvent('VOICE_ATTEMPT',{result:'NO_SPEECH',techStatus:'NO_SPEECH',notes:'No speech detected',eventKey:`${currentItemKey()}|NO_SPEECH|${Date.now()}`})}else if(e.error!=='aborted'){micFailure(e.error==='audio-capture'?'AUDIO_CAPTURE':(hasAppsScript()&&e.error==='not-allowed'?'APPS_SCRIPT_SANDBOX':'DENIED'),new Error(e.error))}};
-    r.onresult=e=>{const result=e.results[0],alts=[];for(let a=0;a<result.length;a++)alts.push(norm(result[a].transcript));const shown=result[0].transcript;const trans=document.getElementById('trans');if(trans)trans.textContent=shown;const matched=alts.includes(norm(deck[i].w));if(matched){auditEvent('VOICE_ATTEMPT',{result:'RECOGNIZED',techStatus:'MIC_VERIFIED',notes:`Transcript: ${shown}`,eventKey:`${currentItemKey()}|VOICE_RECOGNIZED|${beeState}|${Date.now()}`});if(isBeeArena){beeState++;if(beeState>3)correct(`🏆 ${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'});else updateBeeArenaUI()}else correct(`${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'})}else{auditEvent('VOICE_ATTEMPT',{result:'NOT_RECOGNIZED',techStatus:'SPEECH_RECOGNITION',notes:`Transcript: ${shown}`,eventKey:`${currentItemKey()}|VOICE_NOT_RECOGNIZED|${Date.now()}`});fb(lang==='es'?`Escuché “${shown}”. Inténtalo otra vez con calma.`:`I heard “${shown}”. Try again slowly.`,'hint')}};
-    r.onend=()=>{if(gen!==micState.generation)return;micState.active=false;listening=false;currentRecognition=null;const b=document.getElementById(btnId);if(b){b.classList.remove('pulse');b.innerHTML=dict[lang].btnSayWord}};try{r.start()}catch(err){micFailure('DENIED',err);stopMicUI(btnId,true)}
+    if(micState.active){stopMicUI(isBeeArena?'micBtn':'mic3');return}
+    if(!(await ensureMicrophone()))return;
+    if('speechSynthesis'in window)try{speechSynthesis.cancel()}catch(e){}
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const r=new SR();currentRecognition=r;
+    const btnId=isBeeArena?'micBtn':'mic3';micState.active=true;micState.btnId=btnId;micState.mode='word';micState.generation++;const gen=micState.generation;
+    r.lang='en-US';r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
+    let last='';
+    r.onstart=()=>{listening=true;micState.speechDetected=false;const b=document.getElementById(btnId);if(b){b.classList.add('pulse');b.innerHTML=dict[lang].btnMicStop}};
+    r.onspeechstart=()=>{micState.speechDetected=true;const s=document.getElementById('micStatus');if(s){s.textContent=lang==='es'?'🎤 Te estoy escuchando…':'🎤 I am listening…';s.className='mic-status show good'}};
+    r.onresult=e=>{
+        const result=e.results[e.results.length-1],alts=[];
+        for(let a=0;a<result.length;a++)alts.push(norm(result[a].transcript));
+        const shown=String(result[0]?.transcript||'').trim();if(shown)last=shown;
+        const trans=document.getElementById('trans');if(trans&&shown)trans.textContent=shown;
+        if(!result.isFinal)return;
+        const matched=alts.includes(norm(deck[i].w));
+        if(matched){
+            auditEvent('VOICE_ATTEMPT',{result:'RECOGNIZED',techStatus:'MIC_VERIFIED',notes:`Transcript: ${shown}`,eventKey:`${currentItemKey()}|VOICE_RECOGNIZED|${beeState}|${Date.now()}`});
+            stopMicUI(btnId,true);
+            if(isBeeArena){beeState++;if(beeState>3)correct(`🏆 ${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'});else updateBeeArenaUI()}
+            else correct(`${dict[lang].fbCorrect} <strong>${deck[i].w.toUpperCase()}</strong>`,{techStatus:'MIC_VERIFIED'})
+        }else{
+            auditEvent('VOICE_ATTEMPT',{result:'NOT_RECOGNIZED',techStatus:'SPEECH_RECOGNITION',notes:`Transcript: ${shown}`,eventKey:`${currentItemKey()}|VOICE_NOT_RECOGNIZED|${Date.now()}`});
+            fb(lang==='es'?`Escuché “${shown}”. Inténtalo otra vez con calma.`:`I heard “${shown}”. Try again slowly.`,'hint')
+        }
+    };
+    r.onerror=e=>{
+        if(e.error==='no-speech'){setMicStatus('NO_SPEECH','hint');auditEvent('VOICE_ATTEMPT',{result:'NO_SPEECH',techStatus:'NO_SPEECH',notes:'No speech detected',eventKey:`${currentItemKey()}|NO_SPEECH|${Date.now()}`})}
+        else if(e.error!=='aborted'){
+            const code=e.error==='audio-capture'?'AUDIO_CAPTURE':e.error==='network'?'NETWORK':(e.error==='not-allowed'||e.error==='service-not-allowed'?'DENIED':'RECOGNITION_ERROR');
+            micFailure(code,new Error(e.error))
+        }
+    };
+    r.onend=()=>{if(gen!==micState.generation)return;micState.active=false;listening=false;if(currentRecognition===r)currentRecognition=null;const b=document.getElementById(btnId);if(b){b.classList.remove('pulse');b.innerHTML=dict[lang].btnSayWord};if(last&&micState.permission==='granted')setMicStatus('READY','good')};
+    try{setTimeout(()=>{if(micState.active&&gen===micState.generation)r.start()},120)}
+    catch(err){micFailure('RECOGNITION_ERROR',err);stopMicUI(btnId,true)}
 }
 function submitManualSpelling(isBeeArena=false){const input=document.getElementById('manualSpellInput');if(!input)return;const typed=norm(input.value);if(typed===norm(targetWord)){auditEvent('MANUAL_FALLBACK',{result:'CORRECT',techStatus:'MANUAL_FALLBACK',notes:'Keyboard fallback used',eventKey:`${currentItemKey()}|MANUAL_FALLBACK|CORRECT`});if(isBeeArena){beeState=3;updateBeeArenaUI();showBeeManualSayFallback()}else practiceOnlyComplete(`⭐ ${dict[lang].fbCorrect} <strong>${targetWord.toUpperCase()}</strong>`,'Correct keyboard fallback; oral skill not scored')}else{auditEvent('MANUAL_FALLBACK',{result:'TRY_AGAIN',techStatus:'MANUAL_FALLBACK',notes:`Typed: ${input.value}`,eventKey:`${currentItemKey()}|MANUAL_FALLBACK|TRY|${Date.now()}`});fb(dict[lang].fbAlmost,'hint');input.focus()}}
 function practiceVoiceFallback(isBeeArena=false){auditEvent('MANUAL_FALLBACK',{result:'PRACTICED_ALOUD',techStatus:'MANUAL_FALLBACK',notes:'Student self-reported oral practice; not scored',eventKey:`${currentItemKey()}|PRACTICED_ALOUD|${beeState}|${Date.now()}`});if(isBeeArena){beeState++;if(beeState===2)updateBeeArenaUI();else if(beeState>3){practiceOnlyComplete(lang==='es'?'🐝 Ronda practicada.':'🐝 Round practiced.','Bee Arena completed with technical fallback')}else updateBeeArenaUI()}else practiceOnlyComplete(lang==='es'?'🎤 Práctica oral registrada.':'🎤 Oral practice recorded.','Voice Challenge technical fallback')}
@@ -602,7 +750,7 @@ function reward(e){const r=e.currentTarget.getBoundingClientRect();burst(r.left+
 function rewardCenter(){burst(innerWidth/2,Math.min(innerHeight*.55,430))}
 function burst(x,y){const icons=['⭐','🌟','✨','💙','💛','🐝','🔤'];for(let n=0;n<26;n++){const p=document.createElement('div');p.className='pop';p.textContent=icons[Math.floor(Math.random()*icons.length)];p.style.left=(x-8)+'px';p.style.top=(y-5)+'px';p.style.fontSize=(14+Math.random()*20)+'px';p.style.setProperty('--dx',((Math.random()*160)-80)+'px');p.style.setProperty('--rot',((Math.random()*120)-60)+'deg');document.body.appendChild(p);setTimeout(()=>p.remove(),1300)}}
 
-window.addEventListener('pagehide',()=>{if(studentSession.sessionId)auditEvent('SESSION_END',{notes:'Page closed',eventKey:`${studentSession.sessionId}|SESSION_END`})});
+window.addEventListener('pagehide',()=>{stopMicStream();if(studentSession.sessionId)auditEvent('SESSION_END',{notes:'Page closed',eventKey:`${studentSession.sessionId}|SESSION_END`})});
 initBG(); buildBank(); applyLang();
 </script>
 </body>
